@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>计算机辅助设计AI教学助手</title>
+  <meta name="description" content="基于腾讯元器智能体的计算机辅助设计辅助教学平台">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css" id="hljs-light">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" id="hljs-dark" disabled>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/common.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+</head>
+<body>
+<div id="app">
+
+  <!-- ==================== 登录视图 ==================== -->
+  <div id="loginView" class="view view-login">
+    <div class="login-card">
+      <div class="login-logo">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <h1 class="login-title">计算机辅助设计AI教学助手</h1>
+      <p class="login-subtitle">请输入信息登录，开始你的学习之旅</p>
+      <div class="login-form">
+        <div class="form-group">
+          <label for="loginName">姓名</label>
+          <input type="text" id="loginName" placeholder="请输入姓名" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="loginId">学号</label>
+          <input type="text" id="loginId" placeholder="请输入学号" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="loginCode">班级口令<span class="label-optional">（可选）</span></label>
+          <input type="password" id="loginCode" placeholder="教师设置的口令" autocomplete="off">
+        </div>
+        <button id="loginBtn" class="btn btn-primary btn-block">进入学习</button>
+      </div>
+      <div class="login-error" id="loginError"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 对话视图 ==================== -->
+  <div id="chatView" class="view view-chat hidden">
+    <!-- 顶栏 -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="sidebarToggle" class="icon-btn sidebar-toggle" aria-label="菜单">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div class="topbar-logo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <h1 class="topbar-title" id="topbarTitle">计算机辅助设计AI教学助手</h1>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-user" id="topbarUser"></span>
+        <button id="themeToggle" class="icon-btn" title="切换主题" aria-label="切换主题">
+          <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+        <button id="settingsBtn" class="icon-btn" title="设置" aria-label="设置">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+        <button id="logoutBtn" class="icon-btn" title="退出登录" aria-label="退出登录">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="chat-layout">
+      <!-- 侧栏 -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">学生信息</div>
+          <div class="sidebar-card">
+            <div class="sidebar-card-name" id="sidebarName"></div>
+            <div class="sidebar-card-sub" id="sidebarId"></div>
+          </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">快捷功能</div>
+          <div class="sidebar-actions">
+            <button class="sidebar-btn sidebar-btn-accent" id="sizhengBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+              </svg>
+              <span>课堂思政案例</span>
+            </button>
+            <button class="sidebar-btn" id="helpBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+              <span>SW 帮助文档</span>
+            </button>
+            <button class="sidebar-btn" id="exampleBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span>提问示例</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">对话</div>
+          <div class="sidebar-actions">
+            <button class="sidebar-btn" id="clearBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+              <span>清空对话</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-spacer"></div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-divider"></div>
+          <button class="sidebar-btn sidebar-btn-teacher" id="teacherBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3v18h18"/>
+              <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
+            </svg>
+            <span>教师记录入口</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- 对话主区 -->
+      <main class="chat-main">
+        <div class="messages" id="messages">
+          <div class="welcome-screen" id="welcomeScreen">
+            <div class="welcome-icon">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+            <h2 id="welcomeTitle">你好！我是 计算机辅助设计AI教学助手</h2>
+            <p id="welcomeSubtitle">可以问我任何关于计算机辅助设计操作的问题</p>
+            <div class="suggestions" id="suggestions">
+              <button class="suggestion-card" data-text="如何创建拉伸凸台特征？">
+                <span class="suggestion-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+                </span>
+                <span>如何创建拉伸凸台特征？</span>
+              </button>
+              <button class="suggestion-card" data-text="装配体中如何添加配合关系？">
+                <span class="suggestion-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><line x1="9" y1="6" x2="18" y2="6"/><line x1="6" y1="9" x2="6" y2="18"/><line x1="15" y1="18" x2="18" y2="15"/></svg>
+                </span>
+                <span>装配体中如何添加配合关系？</span>
+              </button>
+              <button class="suggestion-card" data-text="工程图怎么生成剖面视图？">
+                <span class="suggestion-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+                </span>
+                <span>工程图怎么生成剖面视图？</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <footer class="input-area">
+          <div class="input-wrapper">
+            <textarea id="messageInput" class="message-input" placeholder="输入你的问题..." rows="1" autocomplete="off"></textarea>
+            <button id="sendBtn" class="send-btn" title="发送" aria-label="发送">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            </button>
+            <button id="stopBtn" class="stop-btn hidden" title="停止生成" aria-label="停止生成">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="6" width="12" height="12" rx="2"/>
+              </svg>
+            </button>
+          </div>
+          <div class="input-hint">
+            <span>按 <kbd>Enter</kbd> 发送，<kbd>Shift</kbd>+<kbd>Enter</kbd> 换行</span>
+            <span class="char-count" id="charCount"></span>
+          </div>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <!-- ==================== 教师后台视图 ==================== -->
+  <div id="teacherView" class="view view-teacher hidden">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="teacherBackBtn" class="icon-btn" title="返回" aria-label="返回">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+        </button>
+        <h1 class="topbar-title">学生提问记录</h1>
+      </div>
+      <div class="topbar-right">
+        <button id="teacherRefreshBtn" class="icon-btn" title="刷新" aria-label="刷新">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/>
+            <polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="teacher-body">
+      <div class="teacher-stats" id="teacherStats">
+        <div class="stat-card">
+          <div class="stat-num" id="statStudents">--</div>
+          <div class="stat-label">参与学生</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statTotal">--</div>
+          <div class="stat-label">提问总数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statToday">--</div>
+          <div class="stat-label">今日提问</div>
+        </div>
+      </div>
+
+      <div class="teacher-toolbar">
+        <input type="text" id="teacherSearch" class="teacher-search" placeholder="搜索学生姓名或问题...">
+        <select id="teacherFilter" class="teacher-filter">
+          <option value="">全部类型</option>
+          <option value="operation">操作问题</option>
+          <option value="sizheng">思政案例</option>
+        </select>
+        <button id="teacherExportBtn" class="btn btn-secondary btn-sm">导出 CSV</button>
+      </div>
+
+      <div class="teacher-table-wrap">
+        <table class="teacher-table" id="teacherTable">
+          <thead>
+            <tr>
+              <th style="width:70px">时间</th>
+              <th style="width:80px">学生</th>
+              <th style="width:90px">学号</th>
+              <th>问题内容</th>
+              <th style="width:70px">类型</th>
+            </tr>
+          </thead>
+          <tbody id="teacherTableBody">
+            <tr class="teacher-empty">
+              <td colspan="5">暂无记录，请确认 Worker 代理地址已配置</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 设置弹窗 ==================== -->
+  <div id="settingsModal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>设置</h2>
+        <button id="closeSettings" class="icon-btn" aria-label="关闭">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-section">
+          <div class="form-section-title">服务地址 <span class="required">*</span></div>
+          <div class="form-group">
+            <label for="setWorkerUrl">Worker 代理地址</label>
+            <input type="text" id="setWorkerUrl" placeholder="https://your-worker.workers.dev" autocomplete="off">
+            <small class="form-hint">Cloudflare Worker 地址，用于 AI 对话和学生记录存储（密钥已安全存储在 Worker 中）</small>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">页面定制</div>
+          <div class="form-group">
+            <label for="setTitle">页面标题</label>
+            <input type="text" id="setTitle" placeholder="计算机辅助设计AI教学助手" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="setWelcomeTitle">欢迎标题</label>
+            <input type="text" id="setWelcomeTitle" placeholder="你好！我是 计算机辅助设计AI教学助手" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="setWelcomeSub">欢迎副标题</label>
+            <input type="text" id="setWelcomeSub" placeholder="可以问我任何关于计算机辅助设计操作的问题" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">教师权限</div>
+          <div class="form-group">
+            <label for="setTeacherPwd">教师后台密码</label>
+            <input type="password" id="setTeacherPwd" placeholder="设置教师后台访问密码" autocomplete="off">
+            <small class="form-hint">学生点击"教师记录入口"时需要输入此密码</small>
+          </div>
+          <div class="form-group">
+            <label for="setClassCode">班级口令（可选）</label>
+            <input type="text" id="setClassCode" placeholder="学生登录时需要输入的口令" autocomplete="off">
+            <small class="form-hint">留空则学生登录不需要口令</small>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">课堂思政</div>
+          <div class="form-group">
+            <label for="setSizhengPrompt">思政案例提示词</label>
+            <textarea id="setSizhengPrompt" rows="3" placeholder="请根据以上对话内容，推荐一个与机械设计相关的课堂思政案例，结合工程伦理、工匠精神或中国制造等主题。" autocomplete="off"></textarea>
+            <small class="form-hint">回答完操作问题后，自动用此提示词请求思政案例</small>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="setSizhengAuto" checked>
+              <span>自动附带思政案例</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelSettings" class="btn btn-secondary">取消</button>
+        <button id="saveSettings" class="btn btn-primary">保存设置</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 教师密码弹窗 ==================== -->
+  <div id="teacherPwdModal" class="modal-overlay hidden">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2>教师验证</h2>
+        <button id="closeTeacherPwd" class="icon-btn" aria-label="关闭">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="teacherPwdInput">请输入教师密码</label>
+          <input type="password" id="teacherPwdInput" placeholder="教师密码" autocomplete="off">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelTeacherPwd" class="btn btn-secondary">取消</button>
+        <button id="confirmTeacherPwd" class="btn btn-primary">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 提问示例弹窗 ==================== -->
+  <div id="exampleModal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>提问示例</h2>
+        <button id="closeExample" class="icon-btn" aria-label="关闭">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="example-list" id="exampleList">
+          <button class="example-item" data-text="如何创建拉伸凸台特征？">
+            <span class="example-tag">草图特征</span>
+            <span>如何创建拉伸凸台特征？</span>
+          </button>
+          <button class="example-item" data-text="装配体中如何添加配合关系？">
+            <span class="example-tag">装配体</span>
+            <span>装配体中如何添加配合关系？</span>
+          </button>
+          <button class="example-item" data-text="工程图怎么生成剖面视图？">
+            <span class="example-tag">工程图</span>
+            <span>工程图怎么生成剖面视图？</span>
+          </button>
+          <button class="example-item" data-text="如何使用扫描特征创建弹簧？">
+            <span class="example-tag">扫描特征</span>
+            <span>如何使用扫描特征创建弹簧？</span>
+          </button>
+          <button class="example-item" data-text="如何在零件中添加圆角和倒角？">
+            <span class="example-tag">细节特征</span>
+            <span>如何在零件中添加圆角和倒角？</span>
+          </button>
+          <button class="example-item" data-text="如何进行零件的镜像操作？">
+            <span class="example-tag">特征操作</span>
+            <span>如何进行零件的镜像操作？</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Toast ==================== -->
+  <div id="toast" class="toast hidden"></div>
+
+</div>
+<script src="js/app.js"></script>
+</body>
+</html>
