@@ -332,12 +332,27 @@
     for (var i = 0; i < recent.length; i++) {
       if (recent[i].role === "user") { startIndex = i; break; }
     }
+    // 构建严格交替的消息列表：跳过连续相同角色的消息
     var result = [];
+    var lastRole = null;
     for (var i = startIndex; i < recent.length; i++) {
+      var role = recent[i].role;
+      // 只保留 user 和 assistant，跳过 system
+      if (role !== "user" && role !== "assistant") continue;
+      // 跳过连续相同角色（保留第一条）
+      if (role === lastRole) continue;
+      // 跳过空内容
+      if (!recent[i].content || !recent[i].content.trim()) continue;
       result.push({
-        role: recent[i].role,
+        role: role,
         content: [{ type: "text", text: recent[i].content }],
       });
+      lastRole = role;
+    }
+    // 确保最后一条是 user（当前要发送的问题）
+    if (result.length === 0 || result[result.length - 1].role !== "user") {
+      // 如果没有 user 消息，返回空让调用方处理
+      return result;
     }
     return result;
   }
@@ -366,7 +381,7 @@
     // 助手流式气泡
     var bubble = appendStreamingBubble();
 
-    var chatUrl = state.settings.workerUrl + "/chat";
+    var chatUrl = state.settings.workerUrl + "/api/chat";
 
     var body = {
       user_id: getUserId(),
@@ -473,7 +488,7 @@
     if (!state.student) return;
 
     try {
-      var response = await fetch(state.settings.workerUrl + "/record", {
+      var response = await fetch(state.settings.workerUrl + "/api/record", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -506,7 +521,7 @@
     el.teacherTableBody.innerHTML = '<tr class="teacher-empty"><td colspan="5">加载中...</td></tr>';
 
     try {
-      var response = await fetch(state.settings.workerUrl + "/records", {
+      var response = await fetch(state.settings.workerUrl + "/api/records", {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
