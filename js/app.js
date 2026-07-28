@@ -44,6 +44,7 @@
     if (savedStudent) {
       try {
         state.student = JSON.parse(savedStudent);
+        renderStudentInfo();
         showView("chat");
         loadMessages();
         renderMessages();
@@ -89,6 +90,18 @@
     }
   }
 
+  function renderStudentInfo() {
+    if (state.student) {
+      el.sidebarName.textContent = state.student.name;
+      el.sidebarId.textContent = "学号: " + state.student.id;
+      el.topbarUser.textContent = state.student.name + " · " + state.student.id;
+    } else {
+      el.sidebarName.textContent = "";
+      el.sidebarId.textContent = "";
+      el.topbarUser.textContent = "";
+    }
+  }
+
   // ==================== Login ====================
   function handleLogin() {
     var name = el.loginName.value.trim();
@@ -109,9 +122,7 @@
     state.student = { name: name, id: id, loginAt: new Date().toISOString() };
     localStorage.setItem("sw_student", JSON.stringify(state.student));
 
-    el.sidebarName.textContent = name;
-    el.sidebarId.textContent = "学号: " + id;
-    el.topbarUser.textContent = name + " · " + id;
+    renderStudentInfo();
 
     loadMessages();
     renderMessages();
@@ -124,6 +135,7 @@
     localStorage.removeItem("sw_messages");
     state.student = null;
     state.messages = [];
+    renderStudentInfo();
     el.loginName.value = "";
     el.loginId.value = "";
     el.loginCode.value = "";
