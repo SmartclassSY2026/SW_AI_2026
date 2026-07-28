@@ -164,7 +164,7 @@ export default {
           "问题": body.question || "",
           "回答": (body.answer || "").substring(0, 1000),
           "类型": body.type || "operation",
-          "时间": body.time || new Date().toISOString(),
+          "时间": Date.now(),
         };
         await createRecord(env, fields);
         return new Response(JSON.stringify({ success: true }), {

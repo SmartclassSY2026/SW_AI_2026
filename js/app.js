@@ -68,7 +68,7 @@
       "loginView","chatView","teacherView","loginBtn","loginName","loginId","loginCode","loginError",
       "topbarTitle","topbarUser","sidebarName","sidebarId",
       "themeToggle","settingsBtn","logoutBtn","sidebarToggle","sidebar",
-      "sizhengBtn","helpBtn","exampleBtn","clearBtn","teacherBtn",
+      "helpBtn","exampleBtn","clearBtn","teacherBtn",
       "messages","welcomeScreen","welcomeTitle","welcomeSubtitle","suggestions",
       "messageInput","sendBtn","stopBtn","charCount",
       "settingsModal","closeSettings","cancelSettings","saveSettings",
@@ -958,7 +958,6 @@
     });
 
     el.clearBtn.addEventListener("click", clearMessages);
-    el.sizhengBtn.addEventListener("click", showSizhengCase);
     el.helpBtn.addEventListener("click", function () { window.open("https://help.solidworks.com/2026/chinese-simplified/SolidWorks/sldworks/r_welcome_sw_online_help.htm", "_blank"); });
     el.exampleBtn.addEventListener("click", function () { el.exampleModal.classList.remove("hidden"); });
     el.closeExample.addEventListener("click", function () { el.exampleModal.classList.add("hidden"); });
