@@ -323,51 +323,6 @@
             <small class="form-hint">Cloudflare Worker 地址，用于 AI 对话和学生记录存储（密钥已安全存储在 Worker 中）</small>
           </div>
         </div>
-
-        <div class="form-section">
-          <div class="form-section-title">页面定制</div>
-          <div class="form-group">
-            <label for="setTitle">页面标题</label>
-            <input type="text" id="setTitle" placeholder="计算机辅助设计AI教学助手" autocomplete="off">
-          </div>
-          <div class="form-group">
-            <label for="setWelcomeTitle">欢迎标题</label>
-            <input type="text" id="setWelcomeTitle" placeholder="你好！我是 计算机辅助设计AI教学助手" autocomplete="off">
-          </div>
-          <div class="form-group">
-            <label for="setWelcomeSub">欢迎副标题</label>
-            <input type="text" id="setWelcomeSub" placeholder="可以问我任何关于计算机辅助设计操作的问题" autocomplete="off">
-          </div>
-        </div>
-
-        <div class="form-section">
-          <div class="form-section-title">教师权限</div>
-          <div class="form-group">
-            <label for="setTeacherPwd">教师后台密码</label>
-            <input type="password" id="setTeacherPwd" placeholder="设置教师后台访问密码" autocomplete="off">
-            <small class="form-hint">学生点击"教师记录入口"时需要输入此密码</small>
-          </div>
-          <div class="form-group">
-            <label for="setClassCode">班级口令（可选）</label>
-            <input type="text" id="setClassCode" placeholder="学生登录时需要输入的口令" autocomplete="off">
-            <small class="form-hint">留空则学生登录不需要口令</small>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <div class="form-section-title">课堂思政</div>
-          <div class="form-group">
-            <label for="setSizhengPrompt">思政案例提示词</label>
-            <textarea id="setSizhengPrompt" rows="3" placeholder="请根据以上对话内容，推荐一个与机械设计相关的课堂思政案例，结合工程伦理、工匠精神或中国制造等主题。" autocomplete="off"></textarea>
-            <small class="form-hint">回答完操作问题后，自动用此提示词请求思政案例</small>
-          </div>
-          <div class="form-group">
-            <label>
-              <input type="checkbox" id="setSizhengAuto" checked>
-              <span>自动附带思政案例</span>
-            </label>
-          </div>
-        </div>
       </div>
       <div class="modal-footer">
         <button id="cancelSettings" class="btn btn-secondary">取消</button>

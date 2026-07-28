@@ -72,8 +72,7 @@
       "messages","welcomeScreen","welcomeTitle","welcomeSubtitle","suggestions",
       "messageInput","sendBtn","stopBtn","charCount",
       "settingsModal","closeSettings","cancelSettings","saveSettings",
-      "setWorkerUrl","setTitle","setWelcomeTitle","setWelcomeSub",
-      "setTeacherPwd","setClassCode","setSizhengPrompt","setSizhengAuto",
+      "setWorkerUrl",
       "teacherPwdModal","closeTeacherPwd","cancelTeacherPwd","confirmTeacherPwd","teacherPwdInput",
       "teacherBackBtn","teacherRefreshBtn","teacherSearch","teacherFilter","teacherExportBtn",
       "teacherTableBody","statStudents","statTotal","statToday",
@@ -137,7 +136,18 @@
   function loadSettings() {
     try {
       var s = localStorage.getItem("sw_settings");
-      if (s) state.settings = Object.assign({}, DEFAULT_SETTINGS, JSON.parse(s));
+      if (s) {
+        var parsed = JSON.parse(s);
+        state.settings = Object.assign({}, DEFAULT_SETTINGS, parsed);
+        // 以下字段固定为默认值，不再从旧设置中读取
+        state.settings.title = DEFAULT_SETTINGS.title;
+        state.settings.welcomeTitle = DEFAULT_SETTINGS.welcomeTitle;
+        state.settings.welcomeSub = DEFAULT_SETTINGS.welcomeSub;
+        state.settings.teacherPwd = DEFAULT_SETTINGS.teacherPwd;
+        state.settings.classCode = DEFAULT_SETTINGS.classCode;
+        state.settings.sizhengPrompt = DEFAULT_SETTINGS.sizhengPrompt;
+        state.settings.sizhengAuto = DEFAULT_SETTINGS.sizhengAuto;
+      }
     } catch (e) {}
   }
 
@@ -156,13 +166,6 @@
   function openSettings() {
     var s = state.settings;
     el.setWorkerUrl.value = s.workerUrl || "";
-    el.setTitle.value = s.title || "";
-    el.setWelcomeTitle.value = s.welcomeTitle || "";
-    el.setWelcomeSub.value = s.welcomeSub || "";
-    el.setTeacherPwd.value = s.teacherPwd || "";
-    el.setClassCode.value = s.classCode || "";
-    el.setSizhengPrompt.value = s.sizhengPrompt || "";
-    el.setSizhengAuto.checked = s.sizhengAuto !== false;
     el.settingsModal.classList.remove("hidden");
   }
 
@@ -173,13 +176,13 @@
 
     state.settings = {
       workerUrl: el.setWorkerUrl.value.trim().replace(/\/$/, ""),
-      title: el.setTitle.value.trim() || "计算机辅助设计AI教学助手",
-      welcomeTitle: el.setWelcomeTitle.value.trim() || "你好！我是 计算机辅助设计AI教学助手",
-      welcomeSub: el.setWelcomeSub.value.trim() || "可以问我任何关于计算机辅助设计操作的问题",
-      teacherPwd: el.setTeacherPwd.value.trim() || "teacher123",
-      classCode: el.setClassCode.value.trim(),
-      sizhengPrompt: el.setSizhengPrompt.value.trim() || DEFAULT_SETTINGS.sizhengPrompt,
-      sizhengAuto: el.setSizhengAuto.checked,
+      title: "计算机辅助设计AI教学助手",
+      welcomeTitle: "你好！我是 计算机辅助设计AI教学助手",
+      welcomeSub: "可以问我任何关于计算机辅助设计操作的问题",
+      teacherPwd: "teacher123",
+      classCode: "",
+      sizhengPrompt: DEFAULT_SETTINGS.sizhengPrompt,
+      sizhengAuto: true,
     };
     saveSettingsToStorage();
     applySettingsToUI();
@@ -342,8 +345,13 @@
   // ==================== API ====================
   function buildApiMessages() {
     var recent = state.messages.slice(-MAX_PAIRS * 2);
-    var result = [];
+    // 元器 API 要求 messages 第一条必须是 user，截掉开头的 assistant/system 消息
+    var startIndex = 0;
     for (var i = 0; i < recent.length; i++) {
+      if (recent[i].role === "user") { startIndex = i; break; }
+    }
+    var result = [];
+    for (var i = startIndex; i < recent.length; i++) {
       result.push({
         role: recent[i].role,
         content: [{ type: "text", text: recent[i].content }],
@@ -776,7 +784,7 @@
 
   function verifyTeacherPwd() {
     var pwd = el.teacherPwdInput.value.trim();
-    if (pwd !== state.settings.teacherPwd) {
+    if (pwd !== "teacher123") {
       showToast("密码错误", "error");
       el.teacherPwdInput.focus();
       return;
