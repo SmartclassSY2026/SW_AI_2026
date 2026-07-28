@@ -14,8 +14,6 @@
     welcomeSub: "可以问我任何关于计算机辅助设计操作的问题",
     teacherPwd: "teacher123",
     classCode: "",
-    sizhengPrompt: "请根据以上对话内容，推荐一个与机械设计相关的课堂思政案例，结合工程伦理、工匠精神或中国制造等主题，简短即可（200字以内）。",
-    sizhengAuto: true,
   };
 
   var state = {
@@ -145,8 +143,6 @@
         state.settings.welcomeSub = DEFAULT_SETTINGS.welcomeSub;
         state.settings.teacherPwd = DEFAULT_SETTINGS.teacherPwd;
         state.settings.classCode = DEFAULT_SETTINGS.classCode;
-        state.settings.sizhengPrompt = DEFAULT_SETTINGS.sizhengPrompt;
-        state.settings.sizhengAuto = DEFAULT_SETTINGS.sizhengAuto;
       }
     } catch (e) {}
   }
@@ -181,8 +177,6 @@
       welcomeSub: "可以问我任何关于计算机辅助设计操作的问题",
       teacherPwd: "teacher123",
       classCode: "",
-      sizhengPrompt: DEFAULT_SETTINGS.sizhengPrompt,
-      sizhengAuto: true,
     };
     saveSettingsToStorage();
     applySettingsToUI();
@@ -243,15 +237,6 @@
     if (msg.role === "assistant") bubble.innerHTML = renderMarkdown(msg.content);
     else bubble.textContent = msg.content;
     content.appendChild(bubble);
-
-    if (msg.sizheng) {
-      var sz = document.createElement("div");
-      sz.className = "sizheng-block";
-      sz.innerHTML =
-        '<div class="sizheng-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>课堂思政案例</div>' +
-        '<div class="sizheng-content">' + renderMarkdown(msg.sizheng) + "</div>";
-      content.appendChild(sz);
-    }
 
     var meta = document.createElement("div");
     meta.className = "message-meta";
@@ -317,28 +302,13 @@
     return bubble;
   }
 
-  function updateStreamingBubble(bubble, text, appendSizheng) {
+  function updateStreamingBubble(bubble, text) {
     var typing = bubble.querySelector("#typingIndicator");
     if (typing) typing.remove();
 
-    if (appendSizheng) {
-      var existing = bubble.querySelector(".sizheng-block");
-      if (!existing) {
-        var sz = document.createElement("div");
-        sz.className = "sizheng-block";
-        sz.innerHTML =
-          '<div class="sizheng-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>课堂思政案例</div>' +
-          '<div class="sizheng-content" id="sizhengContent"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>';
-        bubble.appendChild(sz);
-      } else {
-        var sc = existing.querySelector("#sizhengContent") || existing.querySelector(".sizheng-content");
-        if (sc) sc.innerHTML = renderMarkdown(text);
-      }
-    } else {
-      bubble.dataset.raw = text;
-      bubble.innerHTML = renderMarkdown(text);
-      enhanceCodeBlocks(bubble);
-    }
+    bubble.dataset.raw = text;
+    bubble.innerHTML = renderMarkdown(text);
+    enhanceCodeBlocks(bubble);
     scrollToBottom(true);
   }
 
@@ -447,15 +417,8 @@
         bubble.classList.add("message-error");
       }
 
-      // 课堂思政自动附带
-      var sizhengContent = "";
-      if (state.settings.sizhengAuto && fullResponse && !bubble.classList.contains("message-error")) {
-        sizhengContent = await fetchSizhengCase(text, fullResponse, bubble);
-      }
-
       // 保存消息
       var assistantMsg = addMessage("assistant", fullResponse);
-      if (sizhengContent) assistantMsg.sizheng = sizhengContent;
       saveMessages();
 
       // 替换流式气泡为正式消息
@@ -463,7 +426,7 @@
       if (streamMsg) streamMsg.replaceWith(createMessageElement(assistantMsg));
 
       // 发送记录到飞书
-      sendRecord(text, fullResponse, sizhengContent ? "sizheng" : "operation");
+      sendRecord(text, fullResponse, "对话");
 
     } catch (err) {
       if (err.name === "AbortError") {
@@ -485,170 +448,6 @@
       state.abortController = null;
       updateInputState();
       el.messageInput.focus();
-    }
-  }
-
-  async function fetchSizhengCase(question, answer, bubble) {
-    // 在气泡中添加思政区域
-    updateStreamingBubble(bubble, "", true);
-
-    var prompt = state.settings.sizhengPrompt || DEFAULT_SETTINGS.sizhengPrompt;
-    var messages = [
-      { role: "user", content: [{ type: "text", text: question }] },
-      { role: "assistant", content: [{ type: "text", text: answer }] },
-      { role: "user", content: [{ type: "text", text: prompt }] },
-    ];
-
-    var body = {
-      user_id: getUserId(),
-      stream: true,
-      messages: messages,
-    };
-
-    var fullText = "";
-
-    try {
-      var response = await fetch(state.settings.workerUrl + "/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) return "";
-
-      var reader = response.body.getReader();
-      var decoder = new TextDecoder();
-      var buffer = "";
-
-      while (true) {
-        var chunk = await reader.read();
-        if (chunk.done) break;
-        buffer += decoder.decode(chunk.value, { stream: true });
-        var lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-        for (var i = 0; i < lines.length; i++) {
-          var line = lines[i].trim();
-          if (!line || line.indexOf("data:") !== 0) continue;
-          var data = line.slice(5).trim();
-          if (data === "[DONE]") break;
-          try {
-            var json = JSON.parse(data);
-            var c = json.choices && json.choices[0] && json.choices[0].delta && json.choices[0].delta.content;
-            if (c) {
-              fullText += c;
-              // 更新思政内容
-              var sz = bubble.querySelector(".sizheng-content");
-              if (sz) { sz.innerHTML = renderMarkdown(fullText); enhanceCodeBlocks(sz); }
-              scrollToBottom(true);
-            }
-          } catch (e) {}
-        }
-      }
-    } catch (e) {
-      var sz2 = bubble.querySelector(".sizheng-content");
-      if (sz2) sz2.innerHTML = '<em>思政案例获取失败</em>';
-    }
-
-    return fullText;
-  }
-
-  // 左侧「课堂思政案例」按钮：直接弹出一个独立的思政案例气泡
-  async function showSizhengCase() {
-    if (state.isGenerating) return;
-    if (!state.settings.workerUrl) {
-      showToast("请先在设置中配置 Worker 代理地址", "error");
-      openSettings();
-      return;
-    }
-
-    state.isGenerating = true;
-    updateInputState();
-
-    var prompt = "请推荐一个与计算机辅助设计相关的课堂思政案例，结合工程伦理、工匠精神、中国制造或质量意识等主题，案例要具体、有教育意义，200字以内。";
-
-    // 创建 AI 流式气泡，并直接初始化为思政块样式
-    var bubble = appendStreamingBubble();
-    updateStreamingBubble(bubble, "", true);
-
-    var body = {
-      user_id: getUserId(),
-      stream: true,
-      messages: [{ role: "user", content: [{ type: "text", text: prompt }] }],
-    };
-
-    var fullResponse = "";
-
-    try {
-      var response = await fetch(state.settings.workerUrl + "/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        var errText = await response.text().catch(function () { return ""; });
-        var errMsg = "请求失败 (" + response.status + ")";
-        try { var ej = JSON.parse(errText); if (ej.error && ej.error.message) errMsg = ej.error.message; else if (ej.message) errMsg = ej.message; } catch (_) {}
-        throw new Error(errMsg);
-      }
-
-      var reader = response.body.getReader();
-      var decoder = new TextDecoder();
-      var buffer = "";
-
-      while (true) {
-        var chunk = await reader.read();
-        if (chunk.done) break;
-        buffer += decoder.decode(chunk.value, { stream: true });
-        var lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (var li = 0; li < lines.length; li++) {
-          var line = lines[li].trim();
-          if (!line || line.indexOf("data:") !== 0) continue;
-          var data = line.slice(5).trim();
-          if (data === "[DONE]") break;
-          try {
-            var json = JSON.parse(data);
-            var c = json.choices && json.choices[0] && json.choices[0].delta && json.choices[0].delta.content;
-            if (c) {
-              fullResponse += c;
-              var sz = bubble.querySelector(".sizheng-content");
-              if (sz) { sz.innerHTML = renderMarkdown(fullResponse); enhanceCodeBlocks(sz); }
-              scrollToBottom(true);
-            }
-          } catch (e) {}
-        }
-      }
-
-      if (!fullResponse) {
-        updateStreamingBubble(bubble, "（未收到回复，请检查智能体配置或稍后重试）", false);
-        bubble.classList.add("message-error");
-      }
-
-      // 保存为独立的思政消息（content 为空，避免重复渲染）
-      var assistantMsg = addMessage("assistant", "");
-      assistantMsg.sizheng = fullResponse;
-      saveMessages();
-
-      var streamMsg = $("streamMsg");
-      if (streamMsg) streamMsg.replaceWith(createMessageElement(assistantMsg));
-
-      // 发送记录到飞书（类型为 sizheng）
-      sendRecord("课堂思政案例", fullResponse, "sizheng");
-
-    } catch (err) {
-      console.error("Sizheng case error:", err);
-      updateStreamingBubble(bubble, "⚠ " + err.message, false);
-      bubble.classList.add("message-error");
-      var sm = $("streamMsg");
-      if (sm) sm.removeAttribute("id");
-    } finally {
-      state.isGenerating = false;
-      state.abortController = null;
-      updateInputState();
     }
   }
 
@@ -750,9 +549,7 @@
       var name = escapeHtml(r.student_name || "--");
       var sid = escapeHtml(r.student_id || "--");
       var q = escapeHtml(r.question || "--");
-      var typeTag = r.type === "sizheng"
-        ? '<span class="tag tag-sizheng">思政</span>'
-        : '<span class="tag tag-operation">操作</span>';
+      var typeTag = '<span class="tag tag-operation">对话</span>';
       html += "<tr><td>" + time + "</td><td>" + name + "</td><td>" + sid + "</td><td class='q'>" + q + "</td><td>" + typeTag + "</td></tr>";
     }
     el.teacherTableBody.innerHTML = html;
@@ -763,7 +560,7 @@
     var csv = "\ufeff时间,学生,学号,问题,类型\n";
     for (var i = 0; i < state.records.length; i++) {
       var r = state.records[i];
-      csv += (r.time ? formatDateTime(r.time) : "") + "," + (r.student_name || "") + "," + (r.student_id || "") + ',"' + (r.question || "").replace(/"/g, '""') + '",' + (r.type || "operation") + "\n";
+      csv += (r.time ? formatDateTime(r.time) : "") + "," + (r.student_name || "") + "," + (r.student_id || "") + ',"' + (r.question || "").replace(/"/g, '""') + '",' + (r.type || "对话") + "\n";
     }
     var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     var url = URL.createObjectURL(blob);
