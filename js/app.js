@@ -546,6 +546,103 @@
     return fullText;
   }
 
+  // 左侧「课堂思政案例」按钮：直接弹出一个思政案例，不显示用户问题，不触发二次思政
+  async function showSizhengCase() {
+    if (state.isGenerating) return;
+    if (!state.settings.workerUrl) {
+      showToast("请先在设置中配置 Worker 代理地址", "error");
+      openSettings();
+      return;
+    }
+
+    state.isGenerating = true;
+    updateInputState();
+
+    var prompt = "请推荐一个与计算机辅助设计相关的课堂思政案例，结合工程伦理、工匠精神、中国制造或质量意识等主题，案例要具体、有教育意义，200字以内。";
+
+    // 创建 AI 流式气泡（没有用户消息）
+    var bubble = appendStreamingBubble();
+
+    var body = {
+      user_id: getUserId(),
+      stream: true,
+      messages: [{ role: "user", content: [{ type: "text", text: prompt }] }],
+    };
+
+    var fullResponse = "";
+
+    try {
+      var response = await fetch(state.settings.workerUrl + "/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        var errText = await response.text().catch(function () { return ""; });
+        var errMsg = "请求失败 (" + response.status + ")";
+        try { var ej = JSON.parse(errText); if (ej.error && ej.error.message) errMsg = ej.error.message; else if (ej.message) errMsg = ej.message; } catch (_) {}
+        throw new Error(errMsg);
+      }
+
+      var reader = response.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = "";
+      var firstChunk = true;
+
+      while (true) {
+        var chunk = await reader.read();
+        if (chunk.done) break;
+        buffer += decoder.decode(chunk.value, { stream: true });
+        var lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (var li = 0; li < lines.length; li++) {
+          var line = lines[li].trim();
+          if (!line || line.indexOf("data:") !== 0) continue;
+          var data = line.slice(5).trim();
+          if (data === "[DONE]") break;
+          try {
+            var json = JSON.parse(data);
+            var c = json.choices && json.choices[0] && json.choices[0].delta && json.choices[0].delta.content;
+            if (c) {
+              if (firstChunk) { firstChunk = false; var t = bubble.querySelector("#typingIndicator"); if (t) t.remove(); }
+              fullResponse += c;
+              updateStreamingBubble(bubble, fullResponse, false);
+            }
+          } catch (e) {}
+        }
+      }
+
+      if (!fullResponse) {
+        updateStreamingBubble(bubble, "（未收到回复，请检查智能体配置或稍后重试）", false);
+        bubble.classList.add("message-error");
+      }
+
+      // 保存为 assistant 消息，并标记为思政类型
+      var assistantMsg = addMessage("assistant", fullResponse);
+      assistantMsg.sizheng = fullResponse;
+      saveMessages();
+
+      var streamMsg = $("streamMsg");
+      if (streamMsg) streamMsg.replaceWith(createMessageElement(assistantMsg));
+
+      // 发送记录到飞书（类型为 sizheng）
+      sendRecord("课堂思政案例", fullResponse, "sizheng");
+
+    } catch (err) {
+      console.error("Sizheng case error:", err);
+      updateStreamingBubble(bubble, "⚠ " + err.message, false);
+      bubble.classList.add("message-error");
+      var sm = $("streamMsg");
+      if (sm) sm.removeAttribute("id");
+    } finally {
+      state.isGenerating = false;
+      state.abortController = null;
+      updateInputState();
+    }
+  }
+
   function stopGeneration() {
     if (state.abortController) state.abortController.abort();
   }
@@ -556,7 +653,7 @@
     if (!state.student) return;
 
     try {
-      await fetch(state.settings.workerUrl + "/record", {
+      var response = await fetch(state.settings.workerUrl + "/record", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -568,6 +665,13 @@
           time: new Date().toISOString(),
         }),
       });
+
+      if (!response.ok) {
+        var errText = await response.text().catch(function () { return ""; });
+        var errMsg = "飞书记录失败 (" + response.status + ")";
+        try { var ej = JSON.parse(errText); if (ej.error) errMsg = "飞书记录失败: " + ej.error; } catch (_) {}
+        console.warn(errMsg);
+      }
     } catch (e) {
       console.warn("记录发送失败:", e);
     }
@@ -845,8 +949,8 @@
     });
 
     el.clearBtn.addEventListener("click", clearMessages);
-    el.sizhengBtn.addEventListener("click", function () { el.messageInput.value = "请推荐一个与计算机辅助设计相关的课堂思政案例"; autoResize(); handleSend(); });
-    el.helpBtn.addEventListener("click", function () { el.messageInput.value = "请帮我查找SolidWorks帮助文档中关于"; el.messageInput.focus(); });
+    el.sizhengBtn.addEventListener("click", showSizhengCase);
+    el.helpBtn.addEventListener("click", function () { window.open("https://help.solidworks.com/2026/chinese-simplified/SolidWorks/sldworks/r_welcome_sw_online_help.htm", "_blank"); });
     el.exampleBtn.addEventListener("click", function () { el.exampleModal.classList.remove("hidden"); });
     el.closeExample.addEventListener("click", function () { el.exampleModal.classList.add("hidden"); });
     el.exampleModal.addEventListener("click", function (e) { if (e.target === el.exampleModal) el.exampleModal.classList.add("hidden"); });
