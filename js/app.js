@@ -606,6 +606,8 @@
   // ==================== Markdown ====================
   function renderMarkdown(text) {
     if (!text) return "";
+    // 清理知识库引用标记，如 [1]、[2]、[1,2]、[1,2,3] 等
+    text = text.replace(/\[\s*\d+(?:\s*,\s*\d+)*\s*\]/g, "");
     try {
       var html;
       if (window.marked) html = marked.parse(text);
