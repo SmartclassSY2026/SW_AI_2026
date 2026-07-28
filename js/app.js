@@ -546,7 +546,7 @@
     return fullText;
   }
 
-  // 左侧「课堂思政案例」按钮：直接弹出一个思政案例，不显示用户问题，不触发二次思政
+  // 左侧「课堂思政案例」按钮：直接弹出一个独立的思政案例气泡
   async function showSizhengCase() {
     if (state.isGenerating) return;
     if (!state.settings.workerUrl) {
@@ -560,8 +560,9 @@
 
     var prompt = "请推荐一个与计算机辅助设计相关的课堂思政案例，结合工程伦理、工匠精神、中国制造或质量意识等主题，案例要具体、有教育意义，200字以内。";
 
-    // 创建 AI 流式气泡（没有用户消息）
+    // 创建 AI 流式气泡，并直接初始化为思政块样式
     var bubble = appendStreamingBubble();
+    updateStreamingBubble(bubble, "", true);
 
     var body = {
       user_id: getUserId(),
@@ -588,7 +589,6 @@
       var reader = response.body.getReader();
       var decoder = new TextDecoder();
       var buffer = "";
-      var firstChunk = true;
 
       while (true) {
         var chunk = await reader.read();
@@ -606,9 +606,10 @@
             var json = JSON.parse(data);
             var c = json.choices && json.choices[0] && json.choices[0].delta && json.choices[0].delta.content;
             if (c) {
-              if (firstChunk) { firstChunk = false; var t = bubble.querySelector("#typingIndicator"); if (t) t.remove(); }
               fullResponse += c;
-              updateStreamingBubble(bubble, fullResponse, false);
+              var sz = bubble.querySelector(".sizheng-content");
+              if (sz) { sz.innerHTML = renderMarkdown(fullResponse); enhanceCodeBlocks(sz); }
+              scrollToBottom(true);
             }
           } catch (e) {}
         }
@@ -619,8 +620,8 @@
         bubble.classList.add("message-error");
       }
 
-      // 保存为 assistant 消息，并标记为思政类型
-      var assistantMsg = addMessage("assistant", fullResponse);
+      // 保存为独立的思政消息（content 为空，避免重复渲染）
+      var assistantMsg = addMessage("assistant", "");
       assistantMsg.sizheng = fullResponse;
       saveMessages();
 
