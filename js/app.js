@@ -8,7 +8,7 @@
   var MAX_PAIRS = 20;
 
   var DEFAULT_SETTINGS = {
-    workerUrl: "",
+    workerUrl: "https://swaiteacher.licongwut.workers.dev",
     title: "计算机辅助设计AI教学助手",
     welcomeTitle: "你好！我是 计算机辅助设计AI教学助手",
     welcomeSub: "可以问我任何关于计算机辅助设计操作的问题",
