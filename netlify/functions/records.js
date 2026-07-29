@@ -1,12 +1,15 @@
 /**
  * 飞书记录读取 - Netlify Function
- * GET /api/records
+ * GET /api/records              → 无参数，返回空（不提供记录）
+ * GET /api/records?student_id=xxx → 返回该学生最近 5 条记录
+ * GET /api/records （带 X-Teacher-Auth: teacher123 头）→ 返回全部记录
  *
  * 环境变量:
  *   FEISHU_APP_ID         - 飞书应用 App ID
  *   FEISHU_APP_SECRET      - 飞书应用 App Secret
  *   FEISHU_APP_TOKEN       - 多维表格 App Token
  *   FEISHU_TABLE_ID        - 多维表格 Table ID
+ *   TEACHER_AUTH_KEY       - 教师认证密钥（默认 teacher123）
  */
 
 const FEISHU_BASE = "https://open.feishu.cn/open-apis";
@@ -14,7 +17,7 @@ const FEISHU_BASE = "https://open.feishu.cn/open-apis";
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, X-Teacher-Auth",
 };
 
 function response(statusCode, body, extraHeaders = {}) {
@@ -48,6 +51,23 @@ async function getTenantAccessToken() {
   return cachedToken;
 }
 
+function parseFeishuRecord(item) {
+  const f = item.fields || {};
+  let time = f["时间"];
+  // 飞书日期字段返回毫秒时间戳，转为 ISO 字符串
+  if (typeof time === "number") {
+    time = new Date(time).toISOString();
+  }
+  return {
+    student_name: f["学生姓名"] || "",
+    student_id: f["学号"] || "",
+    question: f["问题"] || "",
+    answer: f["回答"] || "",
+    type: f["类型"] || "对话",
+    time: time || item.created_time || "",
+  };
+}
+
 exports.handler = async (event, context) => {
   if (event.httpMethod === "OPTIONS") {
     return response(200, "");
@@ -58,6 +78,15 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    const params = event.queryStringParameters || {};
+    const studentId = params.student_id || "";
+    const teacherAuth = event.headers["x-teacher-auth"] || event.headers["X-Teacher-Auth"] || "";
+
+    // 无 student_id 且非教师请求 → 返回空
+    if (!studentId && !teacherAuth) {
+      return response(200, { records: [] });
+    }
+
     const token = await getTenantAccessToken();
     const allRecords = [];
     let pageToken = null;
@@ -75,21 +104,24 @@ exports.handler = async (event, context) => {
 
       if (data.data && data.data.items) {
         for (const item of data.data.items) {
-          const f = item.fields || {};
-          allRecords.push({
-            student_name: f["学生姓名"] || "",
-            student_id: f["学号"] || "",
-            question: f["问题"] || "",
-            answer: f["回答"] || "",
-            type: f["类型"] || "对话",
-            time: f["时间"] || item.created_time || "",
-          });
+          allRecords.push(parseFeishuRecord(item));
         }
       }
 
       pageToken = data.data && data.data.has_more ? data.data.page_token : null;
     } while (pageToken);
 
+    // 学生请求：按学号过滤 + 倒序 + 最近 5 条
+    if (studentId) {
+      const studentRecords = allRecords
+        .filter((r) => r.student_id === studentId)
+        .sort((a, b) => new Date(b.time || 0) - new Date(a.time || 0))
+        .slice(0, 5)
+        .reverse(); // 正序显示（旧→新）
+      return response(200, { records: studentRecords });
+    }
+
+    // 教师请求：返回全部
     return response(200, { records: allRecords });
   } catch (err) {
     return response(500, { error: err.message });

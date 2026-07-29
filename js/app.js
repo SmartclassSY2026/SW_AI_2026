@@ -8,7 +8,7 @@
   var MAX_PAIRS = 20;
 
   var DEFAULT_SETTINGS = {
-    workerUrl: "https://swaiteacher.licongwut.workers.dev",
+    workerUrl: "https://aesthetic-squirrel-c6903e.netlify.app",
     title: "计算机辅助设计AI教学助手",
     welcomeTitle: "你好！我是 计算机辅助设计AI教学助手",
     welcomeSub: "可以问我任何关于计算机辅助设计操作的问题",
@@ -48,26 +48,21 @@
         showView("chat");
         loadMessages();
         renderMessages();
+        if (state.messages.length === 0) loadHistoryFromFeishu();
       } catch (e) {
         showView("login");
       }
     } else {
       showView("login");
     }
-
-    if (!state.settings.workerUrl) {
-      setTimeout(function () {
-        if (state.student) openSettings();
-      }, 600);
-    }
   }
 
   function cacheElements() {
     var ids = [
-      "loginView","chatView","teacherView","loginBtn","loginName","loginId","loginCode","loginError",
+      "loginView","chatView","teacherView","loginBtn","loginName","loginId","loginCode","loginError","loginTeacherBtn",
       "topbarTitle","topbarUser","sidebarName","sidebarId",
-      "themeToggle","settingsBtn","logoutBtn","sidebarToggle","sidebar",
-      "helpBtn","exampleBtn","clearBtn","teacherBtn",
+      "themeToggle","logoutBtn","sidebarToggle","sidebar",
+      "helpBtn","exampleBtn","clearBtn","teacherSettingsBtn",
       "messages","welcomeScreen","welcomeTitle","welcomeSubtitle","suggestions",
       "messageInput","sendBtn","stopBtn","charCount",
       "settingsModal","closeSettings","cancelSettings","saveSettings",
@@ -127,6 +122,8 @@
     loadMessages();
     renderMessages();
     showView("chat");
+
+    if (state.messages.length === 0) loadHistoryFromFeishu();
   }
 
   function handleLogout() {
@@ -180,7 +177,7 @@
   function closeSettingsModal() { el.settingsModal.classList.add("hidden"); }
 
   function handleSaveSettings() {
-    if (!el.setWorkerUrl.value.trim()) { showToast("请填写 Worker 代理地址", "error"); el.setWorkerUrl.focus(); return; }
+    if (!el.setWorkerUrl.value.trim()) { showToast("请填写服务代理地址", "error"); el.setWorkerUrl.focus(); return; }
 
     state.settings = {
       workerUrl: el.setWorkerUrl.value.trim().replace(/\/$/, ""),
@@ -366,8 +363,7 @@
     if (!text || !text.trim()) return;
 
     if (!state.settings.workerUrl) {
-      showToast("请先在设置中配置 Worker 代理地址", "error");
-      openSettings();
+      showToast("请先配置服务代理地址", "error");
       return;
     }
 
@@ -534,9 +530,35 @@
     }
   }
 
+  async function loadHistoryFromFeishu() {
+    if (!state.settings.workerUrl) return;
+    if (!state.student) return;
+
+    try {
+      var url = state.settings.workerUrl + "/api/records?student_id=" + encodeURIComponent(state.student.id);
+      var response = await fetch(url, { method: "GET", headers: { "Content-Type": "application/json" } });
+      if (!response.ok) return;
+      var data = await response.json();
+      var records = data.records || [];
+      if (records.length === 0) return;
+
+      // 把飞书记录转为消息列表（先问后答，按时间正序）
+      for (var i = 0; i < records.length; i++) {
+        var r = records[i];
+        if (r.question) addMessage("user", r.question);
+        if (r.answer) addMessage("assistant", r.answer);
+      }
+      saveMessages();
+      renderMessages();
+      showToast("已加载最近 " + records.length + " 条历史记录", "success");
+    } catch (e) {
+      console.warn("加载历史记录失败:", e);
+    }
+  }
+
   async function fetchRecords() {
     if (!state.settings.workerUrl) {
-      showToast("请先在设置中配置 Worker 代理地址", "error");
+      showToast("请先配置服务代理地址", "error");
       return;
     }
 
@@ -545,7 +567,10 @@
     try {
       var response = await fetch(state.settings.workerUrl + "/api/records", {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Teacher-Auth": "teacher123",
+        },
       });
       if (!response.ok) throw new Error("请求失败");
       var data = await response.json();
@@ -787,7 +812,7 @@
 
     el.logoutBtn.addEventListener("click", handleLogout);
     el.themeToggle.addEventListener("click", toggleTheme);
-    el.settingsBtn.addEventListener("click", openSettings);
+    el.teacherSettingsBtn.addEventListener("click", openSettings);
     el.closeSettings.addEventListener("click", closeSettingsModal);
     el.cancelSettings.addEventListener("click", closeSettingsModal);
     el.saveSettings.addEventListener("click", handleSaveSettings);
@@ -815,14 +840,14 @@
       if (item) { el.exampleModal.classList.add("hidden"); el.messageInput.value = item.dataset.text; autoResize(); handleSend(); }
     });
 
-    el.teacherBtn.addEventListener("click", openTeacherPwd);
+    el.loginTeacherBtn.addEventListener("click", openTeacherPwd);
     el.closeTeacherPwd.addEventListener("click", function () { el.teacherPwdModal.classList.add("hidden"); });
     el.cancelTeacherPwd.addEventListener("click", function () { el.teacherPwdModal.classList.add("hidden"); });
     el.confirmTeacherPwd.addEventListener("click", verifyTeacherPwd);
     el.teacherPwdInput.addEventListener("keydown", function (e) { if (e.key === "Enter") verifyTeacherPwd(); });
     el.teacherPwdModal.addEventListener("click", function (e) { if (e.target === el.teacherPwdModal) el.teacherPwdModal.classList.add("hidden"); });
 
-    el.teacherBackBtn.addEventListener("click", function () { showView("chat"); });
+    el.teacherBackBtn.addEventListener("click", function () { showView("login"); });
     el.teacherRefreshBtn.addEventListener("click", fetchRecords);
     el.teacherSearch.addEventListener("input", function () { renderTeacherTable(state.records); });
     el.teacherFilter.addEventListener("change", function () { renderTeacherTable(state.records); });

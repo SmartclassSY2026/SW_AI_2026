@@ -43,6 +43,7 @@
         </div>
         <button id="loginBtn" class="btn btn-primary btn-block">进入学习</button>
       </div>
+      <div class="login-teacher-link" id="loginTeacherBtn">教师入口</div>
       <div class="login-error" id="loginError"></div>
     </div>
   </div>
@@ -84,12 +85,6 @@
             <line x1="21" y1="12" x2="23" y2="12"/>
             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-          </svg>
-        </button>
-        <button id="settingsBtn" class="icon-btn" title="设置" aria-label="设置">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
         </button>
         <button id="logoutBtn" class="icon-btn" title="退出登录" aria-label="退出登录">
@@ -152,17 +147,6 @@
         </div>
 
         <div class="sidebar-spacer"></div>
-
-        <div class="sidebar-section">
-          <div class="sidebar-divider"></div>
-          <button class="sidebar-btn sidebar-btn-teacher" id="teacherBtn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 3v18h18"/>
-              <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
-            </svg>
-            <span>教师记录入口</span>
-          </button>
-        </div>
       </aside>
 
       <!-- 对话主区 -->
@@ -238,6 +222,12 @@
         <h1 class="topbar-title">学生提问记录</h1>
       </div>
       <div class="topbar-right">
+        <button id="teacherSettingsBtn" class="icon-btn" title="系统设置" aria-label="系统设置">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
         <button id="teacherRefreshBtn" class="icon-btn" title="刷新" aria-label="刷新">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"/>
@@ -298,7 +288,7 @@
   <div id="settingsModal" class="modal-overlay hidden">
     <div class="modal">
       <div class="modal-header">
-        <h2>设置</h2>
+        <h2>系统设置</h2>
         <button id="closeSettings" class="icon-btn" aria-label="关闭">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"/>
@@ -310,9 +300,9 @@
         <div class="form-section">
           <div class="form-section-title">服务地址 <span class="required">*</span></div>
           <div class="form-group">
-            <label for="setWorkerUrl">Worker 代理地址</label>
-            <input type="text" id="setWorkerUrl" placeholder="https://swaiteacher.licongwut.workers.dev" autocomplete="off">
-            <small class="form-hint">Cloudflare Worker 地址，用于 AI 对话和学生记录存储（密钥已安全存储在 Worker 中）</small>
+            <label for="setWorkerUrl">服务代理地址</label>
+            <input type="text" id="setWorkerUrl" placeholder="https://aesthetic-squirrel-c6903e.netlify.app" autocomplete="off">
+            <small class="form-hint">Netlify 服务地址，用于 AI 对话和学生记录存储（密钥已安全存储在服务端函数中）</small>
           </div>
         </div>
       </div>
