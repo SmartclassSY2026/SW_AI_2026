@@ -410,32 +410,54 @@
         throw new Error(errMsg);
       }
 
-      var reader = response.body.getReader();
-      var decoder = new TextDecoder();
-      var buffer = "";
+      var respType = response.headers.get("content-type") || "";
 
-      while (true) {
-        var chunk = await reader.read();
-        if (chunk.done) break;
-        buffer += decoder.decode(chunk.value, { stream: true });
-        var lines = buffer.split("\n");
-        buffer = lines.pop() || "";
+      if (respType.indexOf("text/event-stream") >= 0 || respType.indexOf("text/plain") >= 0) {
+        // ===== 流式模式（Vercel）=====
+        var reader = response.body.getReader();
+        var decoder = new TextDecoder();
+        var buffer = "";
 
-        for (var li = 0; li < lines.length; li++) {
-          var line = lines[li].trim();
-          if (!line || line.indexOf("data:") !== 0) continue;
-          var data = line.slice(5).trim();
-          if (data === "[DONE]") break;
-          try {
-            var json = JSON.parse(data);
-            var delta = json.choices && json.choices[0] && json.choices[0].delta;
-            var c = (delta && delta.content) || "";
-            if (c) {
-              if (firstChunk) { firstChunk = false; var t = bubble.querySelector("#typingIndicator"); if (t) t.remove(); }
-              fullResponse += c;
-              updateStreamingBubble(bubble, fullResponse, false);
-            }
-          } catch (e) {}
+        while (true) {
+          var chunk = await reader.read();
+          if (chunk.done) break;
+          buffer += decoder.decode(chunk.value, { stream: true });
+          var lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (var li = 0; li < lines.length; li++) {
+            var line = lines[li].trim();
+            if (!line || line.indexOf("data:") !== 0) continue;
+            var data = line.slice(5).trim();
+            if (data === "[DONE]") break;
+            try {
+              var json = JSON.parse(data);
+              var delta = json.choices && json.choices[0] && json.choices[0].delta;
+              var c = (delta && delta.content) || "";
+              if (c) {
+                if (firstChunk) { firstChunk = false; var t = bubble.querySelector("#typingIndicator"); if (t) t.remove(); }
+                fullResponse += c;
+                updateStreamingBubble(bubble, fullResponse, false);
+              }
+            } catch (e) {}
+          }
+        }
+      } else {
+        // ===== 非流式模式（腾讯云函数 SCF）=====
+        var jsonData = await response.json();
+        fullResponse = jsonData.content || "";
+        if (!fullResponse && jsonData.choices && jsonData.choices[0]) {
+          var m = jsonData.choices[0].message || jsonData.choices[0].delta || {};
+          fullResponse = m.content || "";
+        }
+        if (!fullResponse && jsonData.raw && jsonData.raw.choices && jsonData.raw.choices[0]) {
+          var m2 = jsonData.raw.choices[0].message || jsonData.raw.choices[0].delta || {};
+          fullResponse = m2.content || "";
+        }
+        var t2 = bubble.querySelector("#typingIndicator");
+        if (t2) t2.remove();
+        if (fullResponse) {
+          updateStreamingBubble(bubble, fullResponse, false);
         }
       }
 
