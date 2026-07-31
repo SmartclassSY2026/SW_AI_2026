@@ -243,8 +243,12 @@
 
     var bubble = document.createElement("div");
     bubble.className = "message-bubble";
-    if (msg.role === "assistant") bubble.innerHTML = renderMarkdown(msg.content);
-    else bubble.textContent = msg.content;
+    if (msg.role === "assistant") {
+      bubble.innerHTML = renderMarkdown(msg.content);
+      postProcessStructuredAnswer(bubble);
+    } else {
+      bubble.textContent = msg.content;
+    }
     content.appendChild(bubble);
 
     var meta = document.createElement("div");
@@ -301,7 +305,7 @@
     var typing = document.createElement("div");
     typing.className = "typing-indicator";
     typing.id = "typingIndicator";
-    typing.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+    typing.innerHTML = '<span class="typing-text">思考中</span><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
     bubble.appendChild(typing);
 
     content.appendChild(bubble);
@@ -317,6 +321,7 @@
 
     bubble.dataset.raw = text;
     bubble.innerHTML = renderMarkdown(text);
+    postProcessStructuredAnswer(bubble);
     enhanceCodeBlocks(bubble);
     scrollToBottom(true);
   }
@@ -670,6 +675,10 @@
     if (!text) return "";
     // 清理知识库引用标记，如 [1]、[2]、[1,2]、[1,2,3] 等
     text = text.replace(/\[\s*\d+(?:\s*,\s*\d+)*\s*\]/g, "");
+    // 清理被元器去方括号后残留的孤立数字编号（如"完成 1 2 3 5"），匹配3-5个连续数字
+    text = text.replace(/(\S)\s+\d+(?:\s+\d+){2,4}(?=\s*[。，！？\n]|$)/g, "$1");
+    // 统一三段式标题：把【操作步骤】、**操作步骤** 等 → ### 操作步骤
+    text = text.replace(/(?:^|\n)\s*(?:【|###\s*|\*\*\s*)(操作步骤|易错点提醒|思政小课堂)(?:】|\s*\*\*)\s*(?=\n|$)/g, "\n### $1\n");
     try {
       var html;
       if (window.marked) html = marked.parse(text);
@@ -685,6 +694,46 @@
       return html;
     } catch (e) {
       return escapeHtml(text).replace(/\n/g, "<br>");
+    }
+  }
+
+  // 后处理：把识别到的三段标题（操作步骤/易错点提醒/思政小课堂）包成卡片
+  function postProcessStructuredAnswer(bubble) {
+    var headings = bubble.querySelectorAll("h1, h2, h3, h4");
+    if (headings.length === 0) return;
+
+    var icons = { operation: "📋 ", tips: "⚠️ ", sizheng: "🎯 " };
+    var labels = { operation: "操作步骤", tips: "易错点提醒", sizheng: "思政小课堂" };
+
+    for (var i = 0; i < headings.length; i++) {
+      var h = headings[i];
+      var text = (h.textContent || "").trim();
+      var type = null;
+      if (text.indexOf("操作步骤") >= 0 && text.length < 20) type = "operation";
+      else if (text.indexOf("易错点") >= 0 && text.length < 20) type = "tips";
+      else if (text.indexOf("思政") >= 0 && text.length < 20) type = "sizheng";
+      if (!type) continue;
+
+      // 标题后面的内容，直到下一个 h1-h4，作为 section-body
+      var wrapper = document.createElement("div");
+      wrapper.className = "answer-section section-" + type;
+
+      var headerDiv = document.createElement("div");
+      headerDiv.className = "section-header";
+      headerDiv.textContent = icons[type] + labels[type];
+      wrapper.appendChild(headerDiv);
+
+      var bodyDiv = document.createElement("div");
+      bodyDiv.className = "section-body";
+      var sibling = h.nextElementSibling;
+      while (sibling && !sibling.matches("h1, h2, h3, h4")) {
+        var next = sibling.nextElementSibling;
+        bodyDiv.appendChild(sibling);
+        sibling = next;
+      }
+      wrapper.appendChild(bodyDiv);
+
+      h.parentNode.replaceChild(wrapper, h);
     }
   }
 
