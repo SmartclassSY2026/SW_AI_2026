@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" id="hljs-dark" disabled>
   <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/highlight.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <div id="app">
@@ -113,6 +114,20 @@
         <div class="sidebar-section">
           <div class="sidebar-label">快捷功能</div>
           <div class="sidebar-actions">
+            <button class="sidebar-btn" id="knowledgeGraphBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <circle cx="4" cy="6" r="2"/>
+                <circle cx="20" cy="6" r="2"/>
+                <circle cx="4" cy="18" r="2"/>
+                <circle cx="20" cy="18" r="2"/>
+                <line x1="6" y1="7" x2="10" y2="11"/>
+                <line x1="18" y1="7" x2="14" y2="11"/>
+                <line x1="6" y1="17" x2="10" y2="13"/>
+                <line x1="18" y1="17" x2="14" y2="13"/>
+              </svg>
+              <span>知识图谱</span>
+            </button>
             <button class="sidebar-btn" id="helpBtn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
@@ -239,6 +254,14 @@
     </header>
 
     <div class="teacher-body">
+      <nav class="teacher-tabs">
+        <button class="teacher-tab active" data-tab="records">提问记录</button>
+        <button class="teacher-tab" data-tab="kg">知识图谱</button>
+        <button class="teacher-tab" data-tab="dashboard">评价看板</button>
+      </nav>
+
+      <!-- 提问记录面板 -->
+      <div class="teacher-panel" id="teacherPanelRecords">
       <div class="teacher-stats" id="teacherStats">
         <div class="stat-card">
           <div class="stat-num" id="statStudents">--</div>
@@ -280,6 +303,73 @@
             </tr>
           </tbody>
         </table>
+      </div>
+      </div>
+
+      <!-- 知识图谱面板（教师版，含热度与覆盖率） -->
+      <div class="teacher-panel hidden" id="teacherPanelKg">
+        <div class="kg-stats" id="kgStats">
+          <div class="stat-card"><div class="stat-num" id="kgStatTotal">--</div><div class="stat-label">总知识点</div></div>
+          <div class="stat-card"><div class="stat-num" id="kgStatCovered">--</div><div class="stat-label">已覆盖数</div></div>
+          <div class="stat-card"><div class="stat-num" id="kgStatRate">--</div><div class="stat-label">覆盖率</div></div>
+          <div class="stat-card"><div class="stat-num" id="kgStatCore">--</div><div class="stat-label">核心知识点</div></div>
+        </div>
+        <div class="kg-search-row">
+          <input type="text" id="kgSearchInputT" class="kg-search-input" placeholder="搜索知识点名称...">
+          <div class="kg-level-filter" id="kgLevelFilterT">
+            <button class="kg-level-btn active" data-level="all">全部</button>
+            <button class="kg-level-btn" data-level="core">核心</button>
+            <button class="kg-level-btn" data-level="key">重点</button>
+            <button class="kg-level-btn" data-level="normal">一般</button>
+            <button class="kg-level-btn" data-level="know">了解</button>
+            <button class="kg-level-btn" data-level="optional">选学</button>
+          </div>
+          <div class="kg-level-filter" id="kgCoverFilterT">
+            <button class="kg-level-btn active" data-cover="all">全部</button>
+            <button class="kg-level-btn" data-cover="covered">已覆盖</button>
+            <button class="kg-level-btn" data-cover="uncovered">未覆盖</button>
+          </div>
+        </div>
+        <div class="kg-chapters" id="kgChaptersT"></div>
+      </div>
+
+      <!-- 评价看板面板 -->
+      <div class="teacher-panel hidden" id="teacherPanelDashboard">
+        <div class="dash-time-filter" id="dashTimeFilter">
+          <button class="dash-time-btn active" data-range="week">本周</button>
+          <button class="dash-time-btn" data-range="month">本月</button>
+          <button class="dash-time-btn" data-range="year">本年</button>
+        </div>
+        <div class="dash-stats" id="dashStats">
+          <div class="stat-card"><div class="stat-num" id="dashStatStudents">--</div><div class="stat-label">参与学生</div></div>
+          <div class="stat-card"><div class="stat-num" id="dashStatTotal">--</div><div class="stat-label">提问总数</div></div>
+          <div class="stat-card"><div class="stat-num" id="dashStatAvg">--</div><div class="stat-label">日均提问</div></div>
+          <div class="stat-card"><div class="stat-num" id="dashStatActive">--</div><div class="stat-label">活跃学生(≥3次)</div></div>
+        </div>
+        <div class="dash-charts">
+          <div class="dash-chart-card">
+            <div class="dash-chart-title">知识点频次 TOP 15</div>
+            <div class="dash-chart-box"><canvas id="dashBarChart"></canvas></div>
+          </div>
+          <div class="dash-chart-card">
+            <div class="dash-chart-title">章节提问占比</div>
+            <div class="dash-chart-box dash-chart-doughnut">
+              <canvas id="dashDoughnutChart"></canvas>
+              <div class="dash-legend" id="dashDoughnutLegend"></div>
+            </div>
+          </div>
+        </div>
+        <div class="dash-rank-card">
+          <div class="dash-chart-title">人员参与度排名</div>
+          <table class="dash-rank-table" id="dashRankTable">
+            <thead>
+              <tr><th style="width:60px">排名</th><th>姓名</th><th>学号</th><th>提问数</th><th>涉及知识点</th><th>最近提问</th></tr>
+            </thead>
+            <tbody id="dashRankBody">
+              <tr class="teacher-empty"><td colspan="6">暂无数据</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -381,10 +471,54 @@
     </div>
   </div>
 
+  <!-- ==================== 知识图谱弹窗（学生只读） ==================== -->
+  <div id="knowledgeGraphModal" class="modal-overlay hidden">
+    <div class="modal modal-xl">
+      <div class="modal-header">
+        <h2>知识图谱</h2>
+        <button id="closeKnowledgeGraph" class="icon-btn" aria-label="关闭">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body kg-modal-body">
+        <div class="kg-personal-stats" id="kgPersonalStats">
+          <div class="stat-card"><div class="stat-num" id="kgStuStatTotal">--</div><div class="stat-label">总知识点</div></div>
+          <div class="stat-card"><div class="stat-num" id="kgStuStatAsked">--</div><div class="stat-label">我已问过</div></div>
+          <div class="stat-card"><div class="stat-num" id="kgStuStatRate">--</div><div class="stat-label">我的覆盖率</div></div>
+          <div class="stat-card"><div class="stat-num" id="kgStuStatQuestions">--</div><div class="stat-label">我的提问数</div></div>
+        </div>
+        <div class="kg-search-row">
+          <input type="text" id="kgSearchInput" class="kg-search-input" placeholder="搜索知识点名称...">
+          <div class="kg-level-filter" id="kgLevelFilter">
+            <button class="kg-level-btn active" data-level="all">全部</button>
+            <button class="kg-level-btn" data-level="core">核心</button>
+            <button class="kg-level-btn" data-level="key">重点</button>
+            <button class="kg-level-btn" data-level="normal">一般</button>
+            <button class="kg-level-btn" data-level="know">了解</button>
+            <button class="kg-level-btn" data-level="optional">选学</button>
+          </div>
+        </div>
+        <div class="kg-chapters" id="kgChapters"></div>
+        <div class="kg-legend">
+          <span class="kg-legend-title">重点程度：</span>
+          <span class="kg-legend-item"><span class="kg-dot" style="background:#A32D2D"></span>核心</span>
+          <span class="kg-legend-item"><span class="kg-dot" style="background:#854F0B"></span>重点</span>
+          <span class="kg-legend-item"><span class="kg-dot" style="background:#185FA5"></span>一般</span>
+          <span class="kg-legend-item"><span class="kg-dot" style="background:#5F5E5A"></span>了解</span>
+          <span class="kg-legend-item"><span class="kg-dot" style="background:#888780"></span>选学</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== Toast ==================== -->
   <div id="toast" class="toast hidden"></div>
 
 </div>
+<script src="js/knowledge-graph.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

@@ -71,9 +71,18 @@
       "teacherBackBtn","teacherRefreshBtn","teacherSearch","teacherFilter","teacherExportBtn",
       "teacherTableBody","statStudents","statTotal","statToday",
       "exampleModal","closeExample","exampleList",
+      "knowledgeGraphBtn","knowledgeGraphModal","closeKnowledgeGraph",
+      "kgSearchInput","kgLevelFilter","kgChapters",
+      "kgPersonalStats","kgStuStatTotal","kgStuStatAsked","kgStuStatRate","kgStuStatQuestions",
+      "teacherPanelRecords","teacherPanelKg","teacherPanelDashboard",
+      "kgStats","kgStatTotal","kgStatCovered","kgStatRate","kgStatCore",
+      "kgSearchInputT","kgLevelFilterT","kgCoverFilterT","kgChaptersT",
+      "dashTimeFilter","dashStats","dashStatStudents","dashStatTotal","dashStatAvg","dashStatActive",
+      "dashBarChart","dashDoughnutChart","dashDoughnutLegend","dashRankBody",
       "toast","hljsLight","hljsDark",
     ];
     for (var i = 0; i < ids.length; i++) el[ids[i]] = $(ids[i]);
+    el.teacherTabs = document.querySelectorAll(".teacher-tab");
   }
 
   // ==================== View Switching ====================
@@ -904,11 +913,50 @@
 
     el.sidebarToggle.addEventListener("click", function () { el.sidebar.classList.toggle("open"); });
 
+    // 知识图谱（学生端只读）
+    el.knowledgeGraphBtn.addEventListener("click", openStudentKG);
+    el.closeKnowledgeGraph.addEventListener("click", closeStudentKG);
+    el.knowledgeGraphModal.addEventListener("click", function (e) { if (e.target === el.knowledgeGraphModal) closeStudentKG(); });
+    el.kgSearchInput.addEventListener("input", function () { renderStudentKG(); });
+    el.kgLevelFilter.addEventListener("click", function (e) {
+      var btn = e.target.closest(".kg-level-btn"); if (!btn) return;
+      for (var i = 0; i < el.kgLevelFilter.children.length; i++) el.kgLevelFilter.children[i].classList.remove("active");
+      btn.classList.add("active"); renderStudentKG();
+    });
+
+    // 教师后台 tab 切换
+    for (var ti = 0; ti < el.teacherTabs.length; ti++) {
+      el.teacherTabs[ti].addEventListener("click", function (b) {
+        return function () { switchTeacherTab(b.dataset.tab); };
+      }(el.teacherTabs[ti]));
+    }
+
+    // 教师知识图谱筛选
+    el.kgSearchInputT.addEventListener("input", function () { renderTeacherKG(); });
+    el.kgLevelFilterT.addEventListener("click", function (e) {
+      var btn = e.target.closest(".kg-level-btn"); if (!btn) return;
+      for (var i = 0; i < el.kgLevelFilterT.children.length; i++) el.kgLevelFilterT.children[i].classList.remove("active");
+      btn.classList.add("active"); renderTeacherKG();
+    });
+    el.kgCoverFilterT.addEventListener("click", function (e) {
+      var btn = e.target.closest(".kg-level-btn"); if (!btn) return;
+      for (var i = 0; i < el.kgCoverFilterT.children.length; i++) el.kgCoverFilterT.children[i].classList.remove("active");
+      btn.classList.add("active"); renderTeacherKG();
+    });
+
+    // 评价看板时间筛选
+    el.dashTimeFilter.addEventListener("click", function (e) {
+      var btn = e.target.closest(".dash-time-btn"); if (!btn) return;
+      for (var i = 0; i < el.dashTimeFilter.children.length; i++) el.dashTimeFilter.children[i].classList.remove("active");
+      btn.classList.add("active"); renderDashboard();
+    });
+
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") {
         if (!el.settingsModal.classList.contains("hidden")) closeSettingsModal();
         if (!el.teacherPwdModal.classList.contains("hidden")) el.teacherPwdModal.classList.add("hidden");
         if (!el.exampleModal.classList.contains("hidden")) el.exampleModal.classList.add("hidden");
+        if (!el.knowledgeGraphModal.classList.contains("hidden")) closeStudentKG();
       }
     });
   }
@@ -919,6 +967,396 @@
     el.messageInput.value = "";
     autoResize();
     sendMessage(text);
+  }
+
+  // ==================== Knowledge Graph (shared data layer) ====================
+  // 构建扁平化知识点索引，每个点带从名称中提取的关键词（3-4字滑动窗口+整名）
+  function buildPointIndex() {
+    if (buildPointIndex._cache) return buildPointIndex._cache;
+    var list = [];
+    var chapters = (typeof KNOWLEDGE_GRAPH !== "undefined" ? KNOWLEDGE_GRAPH : { chapters: [] }).chapters;
+    for (var ci = 0; ci < chapters.length; ci++) {
+      var ch = chapters[ci];
+      for (var si = 0; si < ch.sections.length; si++) {
+        var sec = ch.sections[si];
+        for (var gi = 0; gi < sec.groups.length; gi++) {
+          var g = sec.groups[gi];
+          for (var pi = 0; pi < g.points.length; pi++) {
+            var p = g.points[pi];
+            list.push({ chapter: ch, point: p, name: p.name, level: p.level, kws: extractKeywords(p.name) });
+          }
+        }
+      }
+    }
+    buildPointIndex._cache = list;
+    return list;
+  }
+
+  function extractKeywords(name) {
+    var kws = [];
+    if (name) kws.push({ w: name, s: 50 });
+    for (var i = 0; i + 4 <= name.length; i++) kws.push({ w: name.substr(i, 4), s: 20 });
+    for (var i2 = 0; i2 + 3 <= name.length; i2++) kws.push({ w: name.substr(i2, 3), s: 8 });
+    for (var i3 = 0; i3 + 2 <= name.length; i3++) {
+      var w2 = name.substr(i3, 2);
+      if (STOPWORDS[w2]) continue;
+      kws.push({ w: w2, s: 1 });
+    }
+    return kws;
+  }
+
+  // 停用词：通用动词/疑问词，不参与知识点匹配
+  var STOPWORDS = { "创建":1,"删除":1,"怎么":1,"如何":1,"怎样":1,"什么":1,"操作":1,"用":1,"做":1,"的":1,"了":1,"是":1,"在":1,"我":1,"你":1,"他":1,"她":1,"它":1,"和":1,"与":1,"或":1,"中":1,"上":1,"下":1,"里":1,"了":1,"吗":1,"呢":1,"啊":1,"吧":1,"呢":1,"啊":1,"呢":1,"什么":1,"哪些":1,"多少":1,"哪":1,"些":1,"这":1,"那":1,"这个":1,"那个":1,"一些":1,"全部":1,"的":1,"之":1,"了":1,"啊":1,"哈":1,"哦":1 };
+
+  // 一条提问只匹配一个最相关的知识点
+  function matchQuestionToPoint(question) {
+    if (!question) return null;
+    var points = buildPointIndex();
+    var best = null;
+    var bestScore = 0;
+    for (var i = 0; i < points.length; i++) {
+      var p = points[i];
+      var score = 0;
+      for (var ki = 0; ki < p.kws.length; ki++) {
+        if (question.indexOf(p.kws[ki].w) >= 0) score += p.kws[ki].s;
+      }
+      if (score > bestScore) { bestScore = score; best = p; }
+      else if (score === bestScore && score > 0 && best && p.name.length < best.name.length) { best = p; }
+    }
+    return bestScore > 0 ? best : null;
+  }
+
+  // 计算所有知识点被问次数
+  function computeHeat(records) {
+    var points = buildPointIndex();
+    var heat = {};
+    for (var i = 0; i < points.length; i++) heat[points[i].name] = 0;
+    for (var r = 0; r < records.length; r++) {
+      var m = matchQuestionToPoint(records[r].question);
+      if (m) heat[m.name]++;
+    }
+    return heat;
+  }
+
+  // 按时间范围过滤记录
+  function filterByTime(records, range) {
+    var now = new Date();
+    var start = new Date();
+    if (range === "week") {
+      var dow = now.getDay() || 7;
+      start.setDate(now.getDate() - dow + 1);
+      start.setHours(0, 0, 0, 0);
+    } else if (range === "month") {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (range === "year") {
+      start = new Date(now.getFullYear(), 0, 1);
+    }
+    return records.filter(function (r) {
+      if (!r.time) return false;
+      var t = new Date(r.time);
+      return t >= start && t <= now;
+    });
+  }
+
+  // ==================== Student Knowledge Graph (只读，无热度) ====================
+  function openStudentKG() {
+    el.knowledgeGraphModal.classList.remove("hidden");
+    renderStudentKG();
+  }
+  function closeStudentKG() { el.knowledgeGraphModal.classList.add("hidden"); }
+
+  function renderStudentKG() {
+    // 统计该学生自己问过的内容（从 state.messages 提取 user 提问）
+    var points = buildPointIndex();
+    var total = points.length;
+    var userQuestions = [];
+    var seenQ = {};
+    for (var mi = 0; mi < state.messages.length; mi++) {
+      var m = state.messages[mi];
+      if (m && m.role === "user" && m.content && !seenQ[m.content]) {
+        seenQ[m.content] = true;
+        userQuestions.push(m.content);
+      }
+    }
+    var askedSet = {};
+    for (var qi = 0; qi < userQuestions.length; qi++) {
+      var pt = matchQuestionToPoint(userQuestions[qi]);
+      if (pt) askedSet[pt.name] = true;
+    }
+    var askedCount = 0;
+    for (var k in askedSet) askedCount++;
+    if (el.kgStuStatTotal) el.kgStuStatTotal.textContent = total;
+    if (el.kgStuStatAsked) el.kgStuStatAsked.textContent = askedCount;
+    if (el.kgStuStatRate) el.kgStuStatRate.textContent = (total ? Math.round(askedCount * 100 / total) : 0) + "%";
+    if (el.kgStuStatQuestions) el.kgStuStatQuestions.textContent = userQuestions.length;
+
+    var search = (el.kgSearchInput.value || "").trim();
+    var activeLevelBtn = el.kgLevelFilter.querySelector(".kg-level-btn.active");
+    var level = activeLevelBtn ? activeLevelBtn.dataset.level : "all";
+
+    el.kgChapters.innerHTML = buildKGHTML(search, level, "student", null);
+    bindChapterToggle(el.kgChapters);
+  }
+
+  // ==================== Teacher Tabs ====================
+  function switchTeacherTab(name) {
+    for (var i = 0; i < el.teacherTabs.length; i++) {
+      var t = el.teacherTabs[i];
+      if (t.dataset.tab === name) t.classList.add("active"); else t.classList.remove("active");
+    }
+    el.teacherPanelRecords.classList.toggle("hidden", name !== "records");
+    el.teacherPanelKg.classList.toggle("hidden", name !== "kg");
+    el.teacherPanelDashboard.classList.toggle("hidden", name !== "dashboard");
+    if (name === "kg") renderTeacherKG();
+    else if (name === "dashboard") renderDashboard();
+  }
+
+  // ==================== Teacher Knowledge Graph (带热度+覆盖) ====================
+  function renderTeacherKG() {
+    var heat = computeHeat(state.records || []);
+    var points = buildPointIndex();
+    var total = points.length;
+    var covered = 0;
+    for (var i = 0; i < points.length; i++) if (heat[points[i].name] > 0) covered++;
+    var coreCount = 0;
+    for (var j = 0; j < points.length; j++) if (points[j].level === "core") coreCount++;
+    el.kgStatTotal.textContent = total;
+    el.kgStatCovered.textContent = covered;
+    el.kgStatRate.textContent = (total ? Math.round(covered * 100 / total) : 0) + "%";
+    el.kgStatCore.textContent = coreCount;
+
+    var search = (el.kgSearchInputT.value || "").trim();
+    var activeLevelBtn = el.kgLevelFilterT.querySelector(".kg-level-btn.active");
+    var level = activeLevelBtn ? activeLevelBtn.dataset.level : "all";
+    var activeCoverBtn = el.kgCoverFilterT.querySelector(".kg-level-btn.active");
+    var cover = activeCoverBtn ? activeCoverBtn.dataset.cover : "all";
+
+    el.kgChaptersT.innerHTML = buildKGHTML(search, level, "teacher", { heat: heat, cover: cover });
+    bindChapterToggle(el.kgChaptersT);
+  }
+
+  // ==================== Evaluation Dashboard ====================
+  var dashCharts = { bar: null, doughnut: null };
+  function renderDashboard() {
+    var activeBtn = el.dashTimeFilter.querySelector(".dash-time-btn.active");
+    var range = activeBtn ? activeBtn.dataset.range : "week";
+    var records = filterByTime(state.records || [], range);
+    var students = {}, daySet = {}, activeStu = {};
+    for (var i = 0; i < records.length; i++) {
+      var r = records[i];
+      if (r.student_id) { students[r.student_id] = true; activeStu[r.student_id] = (activeStu[r.student_id] || 0) + 1; }
+      if (r.time) daySet[new Date(r.time).toDateString()] = true;
+    }
+    var days = Math.max(Object.keys(daySet).length, 1);
+    var activeCount = 0;
+    for (var k in activeStu) if (activeStu[k] >= 3) activeCount++;
+    el.dashStatStudents.textContent = Object.keys(students).length;
+    el.dashStatTotal.textContent = records.length;
+    el.dashStatAvg.textContent = (records.length / days).toFixed(1);
+    el.dashStatActive.textContent = activeCount;
+
+    // 知识点频次
+    var heat = computeHeat(records);
+    var points = buildPointIndex();
+    var items = [];
+    for (var pi = 0; pi < points.length; pi++) {
+      if (heat[points[pi].name] > 0) items.push({ name: points[pi].name, count: heat[points[pi].name], chapter: points[pi].chapter });
+    }
+    items.sort(function (a, b) { return b.count - a.count; });
+    var top = items.slice(0, 15);
+    renderBarChart(top);
+    renderDoughnut(items);
+    renderRankTable(records);
+  }
+
+  function renderBarChart(top) {
+    if (dashCharts.bar) { dashCharts.bar.destroy(); dashCharts.bar = null; }
+    if (!window.Chart) return;
+    var ctx = el.dashBarChart.getContext("2d");
+    var labels = top.map(function (x) { return x.name; });
+    var data = top.map(function (x) { return x.count; });
+    var colors = top.map(function (x) { return x.chapter.color; });
+    var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    var gridColor = isDark ? "rgba(255,255,255,.08)" : "rgba(0,0,0,.06)";
+    var textColor = isDark ? "#cbd5e1" : "#475569";
+    dashCharts.bar = new Chart(ctx, {
+      type: "bar",
+      data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderRadius: 4 }] },
+      options: {
+        indexAxis: "y", responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } },
+          y: { ticks: { color: textColor, font: { size: 12 } }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  function renderDoughnut(items) {
+    if (dashCharts.doughnut) { dashCharts.doughnut.destroy(); dashCharts.doughnut = null; }
+    var chapters = (typeof KNOWLEDGE_GRAPH !== "undefined" ? KNOWLEDGE_GRAPH : { chapters: [] }).chapters;
+    var byCh = {};
+    for (var i = 0; i < items.length; i++) {
+      var cn = items[i].chapter.name; byCh[cn] = (byCh[cn] || 0) + items[i].count;
+    }
+    var labels = [], data = [], colors = [];
+    for (var ci = 0; ci < chapters.length; ci++) {
+      var ch = chapters[ci];
+      if (byCh[ch.name]) { labels.push(ch.name); data.push(byCh[ch.name]); colors.push(ch.color); }
+    }
+    if (!window.Chart) return;
+    var ctx = el.dashDoughnutChart.getContext("2d");
+    if (data.length === 0) {
+      el.dashDoughnutLegend.innerHTML = '<div class="dash-legend-row" style="color:var(--text-3)">暂无数据</div>';
+      dashCharts.doughnut = new Chart(ctx, {
+        type: "doughnut",
+        data: { labels: ["暂无数据"], datasets: [{ data: [1], backgroundColor: ["#E2E8F0"], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, cutout: "65%" }
+      });
+      return;
+    }
+    var total = data.reduce(function (a, b) { return a + b; }, 0);
+    dashCharts.doughnut = new Chart(ctx, {
+      type: "doughnut",
+      data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth: 2, borderColor: "#fff" }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: "60%" }
+    });
+    var html = "";
+    for (var li = 0; li < labels.length; li++) {
+      var pct = total ? Math.round(data[li] * 100 / total) : 0;
+      html += '<div class="dash-legend-row"><span class="dash-legend-dot" style="background:' + colors[li] + '"></span><span class="dash-legend-name">' + labels[li] + '</span><span class="dash-legend-val">' + data[li] + '次 · ' + pct + '%</span></div>';
+    }
+    el.dashDoughnutLegend.innerHTML = html;
+  }
+
+  function renderRankTable(records) {
+    var stMap = {};  // sid -> {name, count, points:Set, lastTime}
+    var heat = computeHeat(records);
+    for (var i = 0; i < records.length; i++) {
+      var r = records[i];
+      if (!r.student_id) continue;
+      if (!stMap[r.student_id]) stMap[r.student_id] = { name: r.student_name || "--", sid: r.student_id, count: 0, points: {}, lastTime: r.time || "" };
+      stMap[r.student_id].count++;
+      var m = matchQuestionToPoint(r.question);
+      if (m) stMap[r.student_id].points[m.name] = true;
+      if (r.time && r.time > stMap[r.student_id].lastTime) stMap[r.student_id].lastTime = r.time;
+    }
+    var arr = [];
+    for (var k in stMap) {
+      var s = stMap[k];
+      arr.push({ name: s.name, sid: s.sid, count: s.count, pointCount: Object.keys(s.points).length, lastTime: s.lastTime });
+    }
+    arr.sort(function (a, b) { return b.count - a.count; });
+    if (arr.length === 0) {
+      el.dashRankBody.innerHTML = '<tr class="teacher-empty"><td colspan="6">暂无数据</td></tr>';
+      return;
+    }
+    var html = "";
+    for (var ri = 0; ri < arr.length; ri++) {
+      var x = arr[ri];
+      var rankClass = ri < 3 ? "rank-" + (ri + 1) : "";
+      var medal = ri === 0 ? "🥇 " : (ri === 1 ? "🥈 " : (ri === 2 ? "🥉 " : ""));
+      html += '<tr class="' + rankClass + '">'
+        + '<td class="rank-no">' + (medal || (ri + 1)) + '</td>'
+        + '<td>' + escapeHtml(x.name) + '</td>'
+        + '<td>' + escapeHtml(x.sid) + '</td>'
+        + '<td>' + x.count + '</td>'
+        + '<td>' + x.pointCount + '</td>'
+        + '<td>' + (x.lastTime ? formatDateTime(x.lastTime) : "--") + '</td>'
+        + '</tr>';
+    }
+    el.dashRankBody.innerHTML = html;
+  }
+
+  // ==================== KG HTML Builder ====================
+  function buildKGHTML(search, level, mode, opts) {
+    var chapters = (typeof KNOWLEDGE_GRAPH !== "undefined" ? KNOWLEDGE_GRAPH : { chapters: [] }).chapters;
+    var heat = (opts && opts.heat) || {};
+    var cover = (opts && opts.cover) || "all";
+    var showHeat = mode === "teacher";
+    var html = "";
+    for (var ci = 0; ci < chapters.length; ci++) {
+      var ch = chapters[ci];
+      var chapTotal = 0, chapCovered = 0, chapCore = 0;
+      var hasVisiblePoint = false;
+      for (var si = 0; si < ch.sections.length; si++) {
+        var sec = ch.sections[si];
+        for (var gi = 0; gi < sec.groups.length; gi++) {
+          var g = sec.groups[gi];
+          for (var pi = 0; pi < g.points.length; pi++) {
+            var p = g.points[pi];
+            if (p.level === "core") chapCore++;
+            chapTotal++;
+            if (heat[p.name] > 0) chapCovered++;
+            if (matchesKGFilter(p, search, level, cover, heat)) hasVisiblePoint = true;
+          }
+        }
+      }
+      if (search || level !== "all" || cover !== "all") {
+        if (!hasVisiblePoint) continue;
+      }
+      var rate = chapTotal ? Math.round(chapCovered * 100 / chapTotal) : 0;
+      var rateBar = showHeat
+        ? '<div class="kg-chapter-progress" title="覆盖率 ' + rate + '%"><div class="kg-chapter-progress-bar" style="width:' + rate + '%; background:' + ch.color + '"></div></div>'
+        : "";
+      var rateMeta = showHeat ? '<span class="kg-chapter-meta">覆盖 ' + chapCovered + '/' + chapTotal + ' · ' + rate + '%</span>' : '<span class="kg-chapter-meta">' + chapTotal + ' 个知识点</span>';
+      html += '<div class="kg-chapter">'
+        + '<div class="kg-chapter-head">'
+        +   '<span class="kg-chapter-bar" style="background:' + ch.color + '"></span>'
+        +   '<span class="kg-chapter-title">第' + ch.id + '章 · ' + escapeHtml(ch.name) + '</span>'
+        +   rateMeta
+        +   rateBar
+        +   '<span class="kg-chapter-toggle">▶</span>'
+        + '</div>'
+        + '<div class="kg-chapter-body">';
+      for (var si2 = 0; si2 < ch.sections.length; si2++) {
+        var sec2 = ch.sections[si2];
+        html += '<div class="kg-section">'
+          + '<div class="kg-section-title">' + escapeHtml(sec2.id) + ' ' + escapeHtml(sec2.name) + '</div>';
+        for (var gi2 = 0; gi2 < sec2.groups.length; gi2++) {
+          var g2 = sec2.groups[gi2];
+          var pointsHTML = "";
+          for (var pi2 = 0; pi2 < g2.points.length; pi2++) {
+            var p2 = g2.points[pi2];
+            if (!matchesKGFilter(p2, search, level, cover, heat)) continue;
+            var lm = LEVEL_META[p2.level] || { label: p2.level, color: "#5F5E5A", bg: "#F1EFE8" };
+            var h = heat[p2.name] || 0;
+            var covered = h > 0;
+            var cls = (showHeat ? (covered ? "covered" : "uncovered") : "");
+            var heatHTML = showHeat ? '<span class="kg-heat">' + (covered ? "被问 " + h + " 次" : "未被问及") + '</span>' : "";
+            pointsHTML += '<span class="kg-point ' + cls + '" style="background:' + lm.bg + '; color:' + lm.color + '">'
+              +   '<span class="kg-tag" style="background:' + lm.color + '; color:#fff">' + lm.label + '</span>'
+              +   escapeHtml(p2.name)
+              +   heatHTML
+              + '</span>';
+          }
+          if (!pointsHTML) continue;
+          html += '<div class="kg-group"><div class="kg-group-name">' + escapeHtml(g2.id) + ' ' + escapeHtml(g2.name) + '</div><div class="kg-point-list">' + pointsHTML + '</div></div>';
+        }
+        html += '</div>';
+      }
+      html += '</div></div>';
+    }
+    if (!html) return '<div style="text-align:center;color:var(--text-3);padding:30px 0">没有匹配的知识点</div>';
+    return html;
+  }
+
+  function matchesKGFilter(p, search, level, cover, heat) {
+    if (level !== "all" && p.level !== level) return false;
+    if (search && p.name.indexOf(search) === -1) return false;
+    if (cover === "covered" && !(heat[p.name] > 0)) return false;
+    if (cover === "uncovered" && (heat[p.name] > 0)) return false;
+    return true;
+  }
+
+  function bindChapterToggle(container) {
+    var heads = container.querySelectorAll(".kg-chapter-head");
+    for (var i = 0; i < heads.length; i++) {
+      heads[i].addEventListener("click", function (h) {
+        return function () { h.parentElement.classList.toggle("open"); };
+      }(heads[i]));
+    }
   }
 
   // ==================== Start ====================
