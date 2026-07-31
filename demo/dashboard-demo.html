@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>教师后台 Demo - 知识图谱 & 评价看板</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --primary:#185FA5;--accent:#378ADD;--primary-light:#E6F1FB;
+  --bg:#F0F2F5;--surface:#fff;--surface-2:#F8FAFC;--surface-3:#F1F5F9;
+  --text:#1e293b;--text-2:#475569;--text-3:#94a3b8;
+  --border:#E2E8F0;--border-light:#F1F5F9;--danger:#E24B4A;
+  --radius:12px;--radius-sm:8px;--radius-lg:16px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6}
+
+/* topbar */
+.topbar{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.topbar-logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#185FA5,#378ADD);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px}
+.topbar-title{font-size:16px;font-weight:600;margin-left:10px}
+.topbar-right{display:flex;gap:8px;align-items:center}
+.view-toggle{display:flex;gap:4px;background:var(--surface-3);border-radius:var(--radius-sm);padding:4px}
+.view-toggle button{border:none;background:transparent;padding:7px 18px;border-radius:6px;font-family:var(--font);font-size:14px;font-weight:500;color:var(--text-2);cursor:pointer;transition:all .15s}
+.view-toggle button.active{background:var(--surface);color:var(--primary);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.role-badge{font-size:12px;padding:4px 12px;border-radius:var(--radius-sm);background:var(--primary-light);color:var(--primary);font-weight:500}
+
+/* layout */
+.body-wrap{max-width:1040px;margin:0 auto;padding:24px 20px 60px}
+
+/* stats row */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
+.stat-num{font-size:26px;font-weight:700;color:var(--primary)}
+.stat-label{font-size:12px;color:var(--text-3);margin-top:4px}
+.stat-card .stat-sub{font-size:11px;color:var(--text-3);margin-top:2px}
+
+/* toolbar */
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.toolbar .search{flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);font-family:var(--font);font-size:14px;outline:none}
+.toolbar .search:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light)}
+.filter-select{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);font-family:var(--font);font-size:14px;cursor:pointer;outline:none}
+.time-tabs{display:flex;gap:4px;background:var(--surface-3);border-radius:var(--radius-sm);padding:4px}
+.time-tabs button{border:none;background:transparent;padding:6px 16px;border-radius:6px;font-family:var(--font);font-size:13px;cursor:pointer;color:var(--text-2);transition:all .15s}
+.time-tabs button.active{background:var(--surface);color:var(--primary);box-shadow:0 1px 2px rgba(0,0,0,.06);font-weight:500}
+
+/* chapter cards */
+.chapter-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px}
+.chapter-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;transition:all .2s;border-left:4px solid var(--ch-color,#185FA5)}
+.chapter-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);transform:translateY(-1px)}
+.chapter-card.expanded{border-color:var(--ch-color)}
+.chapter-name{font-size:14px;font-weight:600;color:var(--text)}
+.chapter-meta{font-size:12px;color:var(--text-3);margin-top:4px;display:flex;gap:10px}
+.chapter-bar{height:6px;border-radius:3px;background:var(--surface-3);margin-top:8px;overflow:hidden}
+.chapter-bar-fill{height:100%;border-radius:3px;background:var(--ch-color);transition:width .4s ease}
+
+/* accordion section list */
+.accordion{display:none;margin-bottom:24px}
+.accordion.show{display:block;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.acc-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;overflow:hidden}
+.acc-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;transition:background .15s;border-left:4px solid var(--ch-color)}
+.acc-header:hover{background:var(--surface-2)}
+.acc-title{font-size:15px;font-weight:600;color:var(--text)}
+.acc-sub{font-size:12px;color:var(--text-3);margin-top:2px}
+.acc-arrow{transition:transform .25s;color:var(--text-3)}
+.acc-item.open .acc-arrow{transform:rotate(90deg)}
+.acc-body{display:none;padding:8px 16px 14px}
+.acc-item.open .acc-body{display:block}
+.group-block{margin:8px 0;padding-left:12px;border-left:2px solid var(--border-light)}
+.group-title{font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:6px}
+.point-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:6px;margin-bottom:2px;transition:background .12s}
+.point-row:hover{background:var(--surface-2)}
+.point-row.covered{background:linear-gradient(90deg,rgba(24,95,165,.04),transparent)}
+.point-row.uncovered{opacity:.55}
+.point-left{display:flex;align-items:center;gap:8px}
+.point-name{font-size:14px;color:var(--text)}
+.point-row.covered .point-name{color:var(--text)}
+.heat-badge{font-size:11px;padding:2px 8px;border-radius:var(--radius-sm);background:var(--primary-light);color:var(--primary);font-weight:500;white-space:nowrap}
+.heat-badge.zero{background:var(--surface-3);color:var(--text-3)}
+
+/* level tags */
+.level-tag{font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500;white-space:nowrap}
+.lv-core{background:#FCEBEB;color:#A32D2D}
+.lv-key{background:#FAEEDA;color:#854F0B}
+.lv-normal{background:#E6F1FB;color:#185FA5}
+.lv-know{background:#F1EFE8;color:#5F5E5A}
+.lv-optional{background:#F1EFE8;color:#888780}
+
+/* section title */
+.section-title{font-size:18px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-title::before{content:'';width:4px;height:20px;border-radius:2px;background:var(--primary)}
+
+/* charts */
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px}
+.chart-card-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px}
+.chart-flex{display:grid;grid-template-columns:1fr 280px;gap:20px}
+.chart-canvas-wrap{position:relative;height:320px}
+.donut-wrap{position:relative;height:240px;display:flex;align-items:center;justify-content:center}
+
+/* ranking table */
+.ranking-table{width:100%;border-collapse:collapse;font-size:13px}
+.ranking-table th{text-align:left;padding:10px 12px;font-weight:600;color:var(--text-2);border-bottom:2px solid var(--border);background:var(--surface-3)}
+.ranking-table td{padding:10px 12px;color:var(--text-2);border-bottom:1px solid var(--border-light)}
+.ranking-table tr:hover td{background:var(--surface-2)}
+.rank-num{display:inline-flex;width:26px;height:26px;border-radius:50%;align-items:center;justify-content:center;font-weight:600;font-size:13px}
+.rank-1{background:#FEF3C7;color:#B45309}
+.rank-2{background:#E5E7EB;color:#4B5563}
+.rank-3{background:#FED7AA;color:#C2410C}
+.rank-other{background:var(--surface-3);color:var(--text-3)}
+.ranking-table tr.top3 td{font-weight:600}
+
+/* note banner */
+.note-banner{background:var(--primary-light);border:1px solid #B3D4F0;border-radius:var(--radius);padding:12px 16px;margin-bottom:20px;font-size:13px;color:var(--primary);display:flex;align-items:center;gap:8px}
+
+/* hidden */
+.hidden{display:none!important}
+
+/* responsive */
+@media(max-width:768px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .chart-flex{grid-template-columns:1fr}
+  .chapter-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center">
+    <div class="topbar-logo">CAD</div>
+    <span class="topbar-title">教师后台 Demo</span>
+  </div>
+  <div class="topbar-right">
+    <div class="view-toggle" id="viewToggle">
+      <button class="active" data-view="graph">知识图谱</button>
+      <button data-view="board">评价看板</button>
+    </div>
+    <span class="role-badge">教师视角</span>
+  </div>
+</div>
+
+<div class="body-wrap">
+
+  <!-- ===== 知识图谱 ===== -->
+  <div id="view-graph">
+    <div class="note-banner">
+      <span>📌</span>
+      <span>学生端为只读模式：仅展示知识结构 + 重点标签，不显示提问热度和覆盖率。知识图谱独立于评价模块。</span>
+    </div>
+
+    <div class="section-title">知识图谱（进阶版）</div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="statTotal">65</div><div class="stat-label">总知识点</div></div>
+      <div class="stat-card"><div class="stat-num" id="statCovered">38</div><div class="stat-label">已覆盖</div></div>
+      <div class="stat-card"><div class="stat-num" id="statRate">58%</div><div class="stat-label">覆盖率</div></div>
+      <div class="stat-card"><div class="stat-num" id="statCore">18</div><div class="stat-label">核心知识点</div></div>
+    </div>
+
+    <div class="toolbar">
+      <input type="text" class="search" placeholder="搜索知识点…" id="kgSearch">
+      <select class="filter-select" id="kgLevelFilter">
+        <option value="">全部重点程度</option>
+        <option value="core">核心</option>
+        <option value="key">重点</option>
+        <option value="normal">一般</option>
+        <option value="know">了解</option>
+        <option value="optional">选学</option>
+      </select>
+      <select class="filter-select" id="kgCoverFilter">
+        <option value="">全部覆盖状态</option>
+        <option value="covered">已覆盖</option>
+        <option value="uncovered">未覆盖</option>
+      </select>
+    </div>
+
+    <div class="chapter-grid" id="chapterGrid"></div>
+    <div class="accordion" id="accordionArea"></div>
+  </div>
+
+  <!-- ===== 评价看板 ===== -->
+  <div id="view-board" class="hidden">
+    <div class="section-title">评价看板</div>
+
+    <div class="time-tabs" id="timeTabs">
+      <button class="active" data-range="week">本周</button>
+      <button data-range="month">本月</button>
+      <button data-range="year">本年</button>
+    </div>
+
+    <div class="stats-row" style="margin-top:16px">
+      <div class="stat-card"><div class="stat-num" id="boardStudents">24</div><div class="stat-label">参与学生</div></div>
+      <div class="stat-card"><div class="stat-num" id="boardTotal">87</div><div class="stat-label">提问总数</div></div>
+      <div class="stat-card"><div class="stat-num" id="boardDaily">12.4</div><div class="stat-label">日均提问</div></div>
+      <div class="stat-card"><div class="stat-num" id="boardActive">9</div><div class="stat-label">活跃学生(≥3次)</div></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-card-title">知识点提问频次分布</div>
+      <div class="chart-canvas-wrap"><canvas id="freqChart"></canvas></div>
+    </div>
+
+    <div class="chart-flex">
+      <div class="chart-card">
+        <div class="chart-card-title">章节提问占比</div>
+        <div class="donut-wrap"><canvas id="donutChart"></canvas></div>
+      </div>
+      <div class="chart-card" style="align-self:start">
+        <div class="chart-card-title">章节明细</div>
+        <div id="chapterBreakdown"></div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-card-title">人员参与度排名</div>
+      <div style="overflow-x:auto">
+        <table class="ranking-table" id="rankingTable">
+          <thead><tr><th>排名</th><th>姓名</th><th>学号</th><th>提问数</th><th>涉及知识点</th><th>最近提问</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ===== 知识图谱数据（与 knowledge-graph.js 一致） ===== */
+const LEVEL_META={core:{label:'核心',cls:'lv-core'},key:{label:'重点',cls:'lv-key'},normal:{label:'一般',cls:'lv-normal'},know:{label:'了解',cls:'lv-know'},optional:{label:'选学',cls:'lv-optional'}};
+
+const KG={
+chapters:[
+{id:1,name:'软件入门基础',color:'#185FA5',sections:[
+{id:'1.1',name:'软件入门与基础操作',groups:[
+{id:'1.1.1',name:'软件模块与文件管理',points:[{name:'三大核心模块功能',level:'core',heat:5},{name:'文件新建保存规范',level:'normal',heat:2}]},
+{id:'1.1.2',name:'界面与视图操控',groups:[],points:[{name:'界面四大分区功能',level:'know',heat:1},{name:'鼠标视图操控',level:'key',heat:3}]}
+]}
+]},
+{id:2,name:'二维草图设计',color:'#3B6D11',sections:[
+{id:'2.1',name:'草图环境与基础绘制',groups:[
+{id:'2.1.1',name:'草图环境',points:[{name:'草图环境操作',level:'normal',heat:0},{name:'草图基准面选择',level:'normal',heat:2}]},
+{id:'2.1.2',name:'基础草图绘制',points:[{name:'直线矩形绘制',level:'core',heat:6},{name:'圆弧图形绘制',level:'core',heat:4},{name:'椭圆曲线绘制',level:'normal',heat:1}]}
+]},
+{id:'2.2',name:'草图编辑约束与标注',groups:[
+{id:'2.2.1',name:'草图编辑',points:[{name:'草图实体操纵',level:'normal',heat:1},{name:'倒角圆角编辑',level:'key',heat:2},{name:'草图剪裁',level:'key',heat:3},{name:'草图实体变换',level:'key',heat:0}]},
+{id:'2.2.2',name:'几何约束管理',points:[{name:'核心约束类型',level:'core',heat:5},{name:'约束管理',level:'key',heat:2}]},
+{id:'2.2.3',name:'尺寸标注管理',points:[{name:'尺寸标注',level:'core',heat:4},{name:'尺寸数值格式修改',level:'key',heat:1}]}
+]}
+]},
+{id:3,name:'零件实体建模',color:'#BA7517',sections:[
+{id:'3.1',name:'基础拉伸类零件特征',groups:[
+{id:'3.1.1',name:'拉伸凸台切除',points:[{name:'拉伸草图要求',level:'core',heat:7},{name:'拉伸深度类型参数',level:'core',heat:5},{name:'拉伸切除',level:'core',heat:4},{name:'薄壁拉伸',level:'normal',heat:1}]},
+{id:'3.1.2',name:'旋转凸台切除',points:[{name:'旋转草图轴线设置',level:'key',heat:3},{name:'旋转角度切除',level:'key',heat:2}]},
+{id:'3.1.3',name:'倒角与圆角',points:[{name:'多类型倒角创建',level:'key',heat:2},{name:'恒定半径圆角',level:'core',heat:3}]},
+{id:'3.1.4',name:'孔特征设计',points:[{name:'简单直孔定位',level:'key',heat:1},{name:'异形标准孔参数',level:'key',heat:0}]},
+{id:'3.1.5',name:'筋与抽壳特征',points:[{name:'筋特征创建',level:'key',heat:0},{name:'抽壳操作',level:'know',heat:1}]},
+{id:'3.1.6',name:'拔模与装饰螺纹',points:[{name:'拔模斜度设置',level:'normal',heat:0},{name:'装饰螺纹线',level:'normal',heat:0}]}
+]},
+{id:'3.2',name:'高级实体特征',groups:[
+{id:'3.2.1',name:'实体变换操作',points:[{name:'实体平移复制',level:'know',heat:0},{name:'实体旋转变换',level:'know',heat:0}]},
+{id:'3.2.2',name:'特征阵列操作',points:[{name:'线性圆周阵列',level:'core',heat:4},{name:'草图驱动填充阵列',level:'know',heat:0}]},
+{id:'3.2.3',name:'特征镜像操作',points:[{name:'基准面镜像特征',level:'key',heat:1},{name:'镜像功能应用',level:'normal',heat:0}]},
+{id:'3.2.4',name:'扫描特征',points:[{name:'扫描特征要素',level:'key',heat:2},{name:'扫描特征操作',level:'normal',heat:1}]},
+{id:'3.2.5',name:'放样特征',points:[{name:'放样特征要素',level:'key',heat:1},{name:'放样特征操作',level:'normal',heat:0}]}
+]},
+{id:'3.3',name:'零件相关知识',groups:[
+{id:'3.3.1',name:'零件基础属性',points:[{name:'零件材质选用',level:'normal',heat:0},{name:'零件单位修改',level:'know',heat:0}]},
+{id:'3.3.2',name:'参考几何体',points:[{name:'基准面轴创建',level:'core',heat:3},{name:'基准点坐标系',level:'optional',heat:0}]},
+{id:'3.3.3',name:'特征编辑',points:[{name:'特征尺寸修改',level:'key',heat:2},{name:'特征草图重定义',level:'core',heat:3},{name:'特征父子关系',level:'normal',heat:1},{name:'设计树认识',level:'core',heat:4},{name:'特征删除处理',level:'normal',heat:0},{name:'特征排序插入',level:'normal',heat:0},{name:'特征失败修复',level:'know',heat:0}]}
+]}
+]},
+{id:4,name:'装配体设计',color:'#534AB7',sections:[
+{id:'4.1',name:'装配体基础设计',groups:[
+{id:'4.1.1',name:'装配配合约束',points:[{name:'基础配合类型',level:'core',heat:5}]},
+{id:'4.1.2',name:'零部件编辑管理',points:[{name:'装配创建流程',level:'normal',heat:3},{name:'装配环境零件修改',level:'key',heat:2},{name:'零件状态管理',level:'key',heat:1}]},
+{id:'4.1.3',name:'装配视图与检测',points:[{name:'显示状态切换',level:'normal',heat:0},{name:'爆炸视图创建',level:'normal',heat:1},{name:'装配干涉检查',level:'core',heat:2}]}
+]}
+]},
+{id:5,name:'工程图设计',color:'#A32D2D',sections:[
+{id:'5.1',name:'工程图设计',groups:[
+{id:'5.1',name:'视图创建',points:[{name:'基本辅助视图',level:'core',heat:3},{name:'剖视图创建',level:'core',heat:2},{name:'局部放大断裂视图',level:'normal',heat:0}]}
+]},
+{id:'5.2',name:'标注与出图设置',groups:[
+{id:'5.2',name:'标注与出图',points:[{name:'尺寸公差标注',level:'core',heat:2},{name:'粗糙度形位公差',level:'normal',heat:0},{name:'技术要求标注',level:'normal',heat:0}]}
+]}
+]}
+]
+};
+
+/* mock ranking data */
+const RANKING_DATA={
+week:[
+{name:'张明',id:'202401',count:8,points:5,last:'07-31 14:22'},
+{name:'李华',id:'202415',count:6,points:4,last:'07-31 13:05'},
+{name:'王芳',id:'202408',count:5,points:4,last:'07-30 16:40'},
+{name:'刘强',id:'202422',count:4,points:3,last:'07-30 11:15'},
+{name:'陈静',id:'202403',count:3,points:3,last:'07-29 15:20'},
+{name:'赵磊',id:'202411',count:3,points:2,last:'07-29 09:45'},
+{name:'孙伟',id:'202417',count:2,points:2,last:'07-28 14:30'},
+{name:'周婷',id:'202406',count:2,points:1,last:'07-28 10:12'},
+{name:'吴杰',id:'202419',count:1,points:1,last:'07-27 16:05'}
+],
+month:[
+{name:'张明',id:'202401',count:22,points:12,last:'07-31 14:22'},
+{name:'李华',id:'202415',count:18,points:10,last:'07-31 13:05'},
+{name:'王芳',id:'202408',count:15,points:9,last:'07-30 16:40'},
+{name:'刘强',id:'202422',count:12,points:8,last:'07-30 11:15'},
+{name:'陈静',id:'202403',count:10,points:7,last:'07-29 15:20'},
+{name:'赵磊',id:'202411',count:8,points:6,last:'07-29 09:45'},
+{name:'孙伟',id:'202417',count:6,points:4,last:'07-28 14:30'},
+{name:'周婷',id:'202406',count:4,points:3,last:'07-28 10:12'},
+{name:'吴杰',id:'202419',count:3,points:2,last:'07-15 16:05'}
+],
+year:[
+{name:'张明',id:'202401',count:95,points:28,last:'07-31 14:22'},
+{name:'李华',id:'202415',count:78,points:25,last:'07-31 13:05'},
+{name:'王芳',id:'202408',count:65,points:22,last:'07-30 16:40'},
+{name:'刘强',id:'202422',count:52,points:19,last:'07-30 11:15'},
+{name:'陈静',id:'202403',count:48,points:18,last:'07-29 15:20'},
+{name:'赵磊',id:'202411',count:40,points:15,last:'07-29 09:45'},
+{name:'孙伟',id:'202417',count:35,points:13,last:'07-28 14:30'},
+{name:'周婷',id:'202406',count:28,points:11,last:'07-28 10:12'},
+{name:'吴杰',id:'202419',count:22,points:9,last:'07-15 16:05'}
+]
+};
+
+const BOARD_STATS={
+week:{students:24,total:87,daily:12.4,active:9},
+month:{students:28,total:340,daily:11.3,active:14},
+year:{students:32,total:1280,daily:5.2,active:22}
+};
+
+/* ===== Render Knowledge Graph ===== */
+let currentChapter=null;
+
+function getAllPoints(){
+const arr=[];
+KG.chapters.forEach(ch=>ch.sections.forEach(sec=>sec.groups.forEach(g=>g.points.forEach(p=>arr.push({...p,chId:ch.id,chName:ch.name,chColor:ch.color,groupName:g.name,level:p.level,heat:p.heat||0})))));
+return arr;
+}
+
+function renderChapterCards(){
+const grid=document.getElementById('chapterGrid');
+grid.innerHTML='';
+KG.chapters.forEach(ch=>{
+const pts=ch.sections.flatMap(s=>s.groups.flatMap(g=>g.points));
+const covered=pts.filter(p=>(p.heat||0)>0).length;
+const coreCount=pts.filter(p=>p.level==='core').length;
+const keyCount=pts.filter(p=>p.level==='key').length;
+const rate=Math.round(covered/pts.length*100);
+const card=document.createElement('div');
+card.className='chapter-card';
+card.style.setProperty('--ch-color',ch.color);
+card.innerHTML=`<div class="chapter-name">${ch.name}</div>
+<div class="chapter-meta"><span>${pts.length}个知识点</span><span>${coreCount}核心</span></div>
+<div class="chapter-bar"><div class="chapter-bar-fill" style="width:${rate}%"></div></div>
+<div class="chapter-meta" style="margin-top:4px"><span>覆盖 ${rate}%</span></div>`;
+card.onclick=()=>toggleAccordion(ch.id);
+grid.appendChild(card);
+});
+}
+
+function toggleAccordion(chId){
+currentChapter=currentChapter===chId?null:chId;
+document.querySelectorAll('.chapter-card').forEach((c,i)=>{c.classList.toggle('expanded',KG.chapters[i].id===currentChapter)});
+const area=document.getElementById('accordionArea');
+if(!currentChapter){area.classList.remove('show');return}
+const ch=KG.chapters.find(c=>c.id===chId);
+area.style.setProperty('--ch-color',ch.color);
+renderAccordion(ch);
+area.classList.add('show');
+}
+
+function renderAccordion(ch){
+const area=document.getElementById('accordionArea');
+area.innerHTML='';
+ch.sections.forEach(sec=>{
+const item=document.createElement('div');
+item.className='acc-item open';
+const secPts=sec.groups.flatMap(g=>g.points);
+const secCovered=secPts.filter(p=>(p.heat||0)>0).length;
+const header=document.createElement('div');
+header.className='acc-header';
+header.style.setProperty('--ch-color',ch.color);
+header.innerHTML=`<div><div class="acc-title">${sec.name}</div><div class="acc-sub">${sec.groups.length}个小节 · ${secPts.length}个知识点 · 覆盖${secCovered}个</div></div><span class="acc-arrow">▶</span>`;
+header.onclick=()=>item.classList.toggle('open');
+item.appendChild(header);
+const body=document.createElement('div');
+body.className='acc-body';
+sec.groups.forEach(g=>{
+const gb=document.createElement('div');
+gb.className='group-block';
+gb.innerHTML=`<div class="group-title">${g.name}</div>`;
+g.points.forEach(p=>{
+const row=document.createElement('div');
+const covered=(p.heat||0)>0;
+row.className='point-row '+(covered?'covered':'uncovered');
+const lv=LEVEL_META[p.level];
+row.innerHTML=`<div class="point-left"><span class="level-tag ${lv.cls}">${lv.label}</span><span class="point-name">${p.name}</span></div><span class="heat-badge ${covered?'':'zero'}">${covered?'热度 '+p.heat:'未触及'}</span>`;
+gb.appendChild(row);
+});
+body.appendChild(gb);
+});
+item.appendChild(body);
+area.appendChild(item);
+});
+}
+
+function applyKgFilters(){
+const search=document.getElementById('kgSearch').value.toLowerCase();
+const levelF=document.getElementById('kgLevelFilter').value;
+const coverF=document.getElementById('kgCoverFilter').value;
+document.querySelectorAll('.point-row').forEach(row=>{
+const name=row.querySelector('.point-name').textContent.toLowerCase();
+const lv=row.querySelector('.level-tag').className;
+const isCovered=row.classList.contains('covered');
+const matchS=!search||name.includes(search);
+const matchL=!levelF||lv.includes('lv-'+levelF);
+const matchC=!coverF||(coverF==='covered'&&isCovered)||(coverF==='uncovered'&&!isCovered);
+row.style.display=(matchS&&matchL&&matchC)?'':'none';
+});
+}
+
+/* ===== Render Board ===== */
+let freqChart=null,donutChart=null,currentRange='week';
+
+function renderBoard(range){
+currentRange=range;
+const s=BOARD_STATS[range];
+document.getElementById('boardStudents').textContent=s.students;
+document.getElementById('boardTotal').textContent=s.total;
+document.getElementById('boardDaily').textContent=s.daily;
+document.getElementById('boardActive').textContent=s.active;
+renderFreqChart(range);
+renderDonut(range);
+renderRanking(range);
+renderBreakdown(range);
+}
+
+function getFreqData(range){
+const all=getAllPoints();
+const mult={week:1,month:4,year:15};
+return all.filter(p=>(p.heat||0)>0).map(p=>({
+name:p.name.length>6?p.name.slice(0,5)+'…':p.name,
+full:p.name,
+count:(p.heat||0)*(mult[range]||1),
+chColor:p.chColor
+})).sort((a,b)=>b.count-a.count).slice(0,15);
+}
+
+function renderFreqChart(range){
+const data=getFreqData(range);
+const ctx=document.getElementById('freqChart');
+if(freqChart)freqChart.destroy();
+freqChart=new Chart(ctx,{
+type:'bar',
+data:{labels:data.map(d=>d.name),datasets:[{label:'提问次数',data:data.map(d=>d.count),backgroundColor:data.map(d=>d.chColor),borderRadius:4}]},
+options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>data[c[0].dataIndex].full,label:c=>c.parsed.x+'次'}}},
+scales:{x:{beginAtZero:true,ticks:{color:'#94a3b8'}},y:{ticks:{color:'#475569',font:{size:12}}}}}
+});
+}
+
+function getChapterData(range){
+const mult={week:1,month:4,year:15};
+return KG.chapters.map(ch=>{
+let sum=0;
+ch.sections.forEach(s=>s.groups.forEach(g=>g.points.forEach(p=>sum+=(p.heat||0)*mult[range])));
+return {name:ch.name,color:ch.color,count:sum};
+});
+}
+
+function renderDonut(range){
+const data=getChapterData(range);
+const ctx=document.getElementById('donutChart');
+if(donutChart)donutChart.destroy();
+donutChart=new Chart(ctx,{
+type:'doughnut',
+data:{labels:data.map(d=>d.name),datasets:[{data:data.map(d=>d.count),backgroundColor:data.map(d=>d.color),borderWidth:2,borderColor:'#fff'}]},
+options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+plugins:{legend:{position:'bottom',labels:{font:{size:11},color:'#475569',padding:8}}}}
+});
+}
+
+function renderBreakdown(range){
+const data=getChapterData(range);
+const total=data.reduce((s,d)=>s+d.count,0);
+const el=document.getElementById('chapterBreakdown');
+el.innerHTML=data.map(d=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-light)"><span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:${d.color}"></span>${d.name}</span><span style="font-weight:600">${d.count}次 (${Math.round(d.count/total*100)}%)</span></div>`).join('');
+}
+
+function renderRanking(range){
+const data=RANKING_DATA[range];
+const tb=document.querySelector('#rankingTable tbody');
+tb.innerHTML=data.map((r,i)=>{
+const rc=i<3?`rank-${i+1}`:'rank-other';
+const tr=i<3?'top3':'';
+return `<tr class="${tr}"><td><span class="rank-num ${rc}">${i+1}</span></td><td>${r.name}</td><td>${r.id}</td><td>${r.count}</td><td>${r.points}</td><td style="color:var(--text-3)">${r.last}</td></tr>`;
+}).join('');
+}
+
+/* ===== Events ===== */
+document.querySelectorAll('#viewToggle button').forEach(b=>{
+b.onclick=()=>{
+document.querySelectorAll('#viewToggle button').forEach(x=>x.classList.remove('active'));
+b.classList.add('active');
+const v=b.dataset.view;
+document.getElementById('view-graph').classList.toggle('hidden',v!=='graph');
+document.getElementById('view-board').classList.toggle('hidden',v!=='board');
+if(v==='board')renderBoard(currentRange);
+};
+});
+
+document.querySelectorAll('#timeTabs button').forEach(b=>{
+b.onclick=()=>{
+document.querySelectorAll('#timeTabs button').forEach(x=>x.classList.remove('active'));
+b.classList.add('active');
+renderBoard(b.dataset.range);
+};
+});
+
+document.getElementById('kgSearch').oninput=applyKgFilters;
+document.getElementById('kgLevelFilter').onchange=applyKgFilters;
+document.getElementById('kgCoverFilter').onchange=applyKgFilters;
+
+/* init */
+renderChapterCards();
+</script>
+</body>
+</html>
