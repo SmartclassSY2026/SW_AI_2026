@@ -2,17 +2,43 @@
 <html lang="zh-CN" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>计算机辅助设计AI教学助手</title>
-  <meta name="description" content="基于腾讯元器智能体的计算机辅助设计辅助教学平台">
+  <title>整体Demo · 含学习报告+班级报告</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="../css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css" id="hljs-light">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" id="hljs-dark" disabled>
   <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/highlight.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    /* Demo 专用：弹窗内容样式（不影响原版任何元素） */
+    .report-banner { display:flex; align-items:center; gap:8px; padding:10px 14px; background:#E8F1FB; border-left:3px solid #185FA5; border-radius:6px; margin-bottom:14px; font-size:13px; color:#185FA5; }
+    .report-banner.new { background:#FFF7E6; border-left-color:#FAAD14; color:#874D00; }
+    .report-section { margin-bottom:20px; }
+    .report-section h3 { font-size:14px; font-weight:600; color:#333; margin:0 0 12px 0; padding-bottom:8px; border-bottom:1px solid #eee; display:flex; align-items:center; gap:6px; }
+    .report-section h3 .num { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:#185FA5; color:#fff; font-size:12px; }
+    .progress-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .progress-row .name { flex:0 0 140px; font-size:13px; color:#555; }
+    .progress-row .bar { flex:1; height:18px; background:#F0F0F0; border-radius:9px; overflow:hidden; position:relative; }
+    .progress-row .bar-fill { height:100%; background:linear-gradient(90deg,#185FA5,#5B9BD5); border-radius:9px; transition:width 0.6s; }
+    .progress-row .bar-fill.core { background:linear-gradient(90deg,#A32D2D,#E16C6C); }
+    .progress-row .bar-fill.key { background:linear-gradient(90deg,#854F0B,#D99858); }
+    .progress-row .pct { flex:0 0 50px; text-align:right; font-size:12px; color:#666; font-weight:600; }
+    .recent-list { list-style:none; padding:0; margin:0; }
+    .recent-list li { display:flex; gap:10px; padding:10px 0; border-bottom:1px dashed #eee; font-size:13px; }
+    .recent-list li:last-child { border-bottom:none; }
+    .recent-list .q { flex:1; color:#333; }
+    .recent-list .t { flex:0 0 110px; text-align:right; color:#999; font-size:12px; }
+    .recent-list .tag { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; margin-right:6px; }
+    .recent-list .tag.mastered { background:#F6FFED; color:#389E0D; }
+    .recent-list .tag.learning { background:#E6F7FF; color:#096DD9; }
+    .recent-list .tag.weak { background:#FFF1F0; color:#CF1322; }
+    .suggestion-box { padding:14px 16px; background:linear-gradient(135deg,#FFF8E1,#FFFBE6); border:1px solid #FFE58F; border-radius:8px; font-size:13px; line-height:1.7; color:#874D00; }
+    .suggestion-box strong { color:#AD6800; }
+    .report-two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    @media (max-width:760px) { .report-two-col { grid-template-columns:1fr; } }
+  </style>
 </head>
 <body>
 <div id="app">
@@ -51,7 +77,6 @@
 
   <!-- ==================== 对话视图 ==================== -->
   <div id="chatView" class="view view-chat hidden">
-    <!-- 顶栏 -->
     <header class="topbar">
       <div class="topbar-left">
         <button id="sidebarToggle" class="icon-btn sidebar-toggle" aria-label="菜单">
@@ -85,7 +110,7 @@
             <line x1="1" y1="12" x2="3" y2="12"/>
             <line x1="21" y1="12" x2="23" y2="12"/>
             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="5.64"/>
           </svg>
         </button>
         <button id="logoutBtn" class="icon-btn" title="退出登录" aria-label="退出登录">
@@ -99,7 +124,6 @@
     </header>
 
     <div class="chat-layout">
-      <!-- 侧栏 -->
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-section">
           <div class="sidebar-label">学生信息</div>
@@ -115,11 +139,14 @@
           <div class="sidebar-label">快捷功能</div>
           <div class="sidebar-actions">
             <!-- ★ 新增：学习报告按钮（位置在知识图谱上面） -->
-            <button class="sidebar-btn" id="reportBtn">
+            <button class="sidebar-btn" id="reportBtn" style="background:linear-gradient(135deg,#E8F1FB,#F0F7FF); border-color:#B3D4F0; color:#185FA5;">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
               </svg>
               <span>学习报告</span>
+              <span style="margin-left:auto; font-size:10px; background:#185FA5; color:#fff; padding:1px 6px; border-radius:8px;">NEW</span>
             </button>
             <button class="sidebar-btn" id="knowledgeGraphBtn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -171,7 +198,6 @@
         <div class="sidebar-spacer"></div>
       </aside>
 
-      <!-- 对话主区 -->
       <main class="chat-main">
         <div class="messages" id="messages">
           <div class="welcome-screen" id="welcomeScreen">
@@ -266,56 +292,59 @@
         <button class="teacher-tab" data-tab="kg">知识图谱</button>
         <button class="teacher-tab" data-tab="dashboard">评价看板</button>
         <!-- ★ 新增：班级报告 tab -->
-        <button class="teacher-tab" data-tab="classReport">班级报告</button>
+        <button class="teacher-tab" data-tab="classReport" style="position:relative;">
+          班级报告
+          <span style="margin-left:4px; font-size:9px; background:#FAAD14; color:#fff; padding:1px 5px; border-radius:6px; font-weight:600;">NEW</span>
+        </button>
       </nav>
 
-      <!-- 提问记录面板 -->
+      <!-- 提问记录面板（原版，未改） -->
       <div class="teacher-panel" id="teacherPanelRecords">
-      <div class="teacher-stats" id="teacherStats">
-        <div class="stat-card">
-          <div class="stat-num" id="statStudents">--</div>
-          <div class="stat-label">参与学生</div>
+        <div class="teacher-stats" id="teacherStats">
+          <div class="stat-card">
+            <div class="stat-num" id="statStudents">--</div>
+            <div class="stat-label">参与学生</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="statTotal">--</div>
+            <div class="stat-label">提问总数</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="statToday">--</div>
+            <div class="stat-label">今日提问</div>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-num" id="statTotal">--</div>
-          <div class="stat-label">提问总数</div>
+
+        <div class="teacher-toolbar">
+          <input type="text" id="teacherSearch" class="teacher-search" placeholder="搜索学生姓名或问题...">
+          <select id="teacherFilter" class="teacher-filter">
+            <option value="">全部类型</option>
+            <option value="对话">对话</option>
+          </select>
+          <button id="teacherExportBtn" class="btn btn-secondary btn-sm">导出 CSV</button>
         </div>
-        <div class="stat-card">
-          <div class="stat-num" id="statToday">--</div>
-          <div class="stat-label">今日提问</div>
+
+        <div class="teacher-table-wrap">
+          <table class="teacher-table" id="teacherTable">
+            <thead>
+              <tr>
+                <th style="width:70px">时间</th>
+                <th style="width:80px">学生</th>
+                <th style="width:90px">学号</th>
+                <th>问题内容</th>
+                <th style="width:70px">类型</th>
+              </tr>
+            </thead>
+            <tbody id="teacherTableBody">
+              <tr class="teacher-empty">
+                <td colspan="5">暂无记录，请确认 Worker 代理地址已配置</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <div class="teacher-toolbar">
-        <input type="text" id="teacherSearch" class="teacher-search" placeholder="搜索学生姓名或问题...">
-        <select id="teacherFilter" class="teacher-filter">
-          <option value="">全部类型</option>
-          <option value="对话">对话</option>
-        </select>
-        <button id="teacherExportBtn" class="btn btn-secondary btn-sm">导出 CSV</button>
-      </div>
-
-      <div class="teacher-table-wrap">
-        <table class="teacher-table" id="teacherTable">
-          <thead>
-            <tr>
-              <th style="width:70px">时间</th>
-              <th style="width:80px">学生</th>
-              <th style="width:90px">学号</th>
-              <th>问题内容</th>
-              <th style="width:70px">类型</th>
-            </tr>
-          </thead>
-          <tbody id="teacherTableBody">
-            <tr class="teacher-empty">
-              <td colspan="5">暂无记录，请确认 Worker 代理地址已配置</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      </div>
-
-      <!-- 知识图谱面板（教师版，含热度与覆盖率） -->
+      <!-- 知识图谱面板（原版，未改） -->
       <div class="teacher-panel hidden" id="teacherPanelKg">
         <div class="kg-stats" id="kgStats">
           <div class="stat-card"><div class="stat-num" id="kgStatTotal">--</div><div class="stat-label">总知识点</div></div>
@@ -342,7 +371,7 @@
         <div class="kg-chapters" id="kgChaptersT"></div>
       </div>
 
-      <!-- 评价看板面板 -->
+      <!-- 评价看板面板（原版，未改） -->
       <div class="teacher-panel hidden" id="teacherPanelDashboard">
         <div class="dash-time-filter" id="dashTimeFilter">
           <button class="dash-time-btn active" data-range="week">本周</button>
@@ -380,50 +409,78 @@
           </table>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- ==================== 班级报告面板（新增） ==================== -->
-  <div class="teacher-panel hidden" id="teacherPanelClassReport">
-    <div class="dash-time-filter" id="classTimeFilter">
-      <button class="dash-time-btn active" data-range="week">本周</button>
-      <button class="dash-time-btn" data-range="month">本月</button>
-      <button class="dash-time-btn" data-range="all">全部</button>
-    </div>
-    <div class="dash-stats">
-      <div class="stat-card"><div class="stat-num" id="crStatStudents">--</div><div class="stat-label">参与学生</div></div>
-      <div class="stat-card"><div class="stat-num" id="crStatTotal">--</div><div class="stat-label">提问总数</div></div>
-      <div class="stat-card"><div class="stat-num" id="crStatAvg">--</div><div class="stat-label">日均提问</div></div>
-      <div class="stat-card"><div class="stat-num" id="crStatActive">--</div><div class="stat-label">活跃学生(≥3次)</div></div>
-    </div>
-    <div class="report-section">
-      <h3><span class="num">1</span>全班各章节提问覆盖率</h3>
-      <div class="dash-chart-card">
-        <div class="dash-chart-title">各章覆盖知识点数</div>
-        <div class="dash-chart-box"><canvas id="classChapterBar"></canvas></div>
-      </div>
-    </div>
-    <div class="report-section">
-      <h3><span class="num">2</span>学生参与度 TOP 10</h3>
-      <div class="teacher-table-wrap">
-        <table class="teacher-table">
-          <thead><tr><th style="width:60px">排名</th><th>姓名</th><th>学号</th><th>提问数</th><th>涉及知识点</th><th>最近提问</th></tr></thead>
-          <tbody id="crRankBody">
-            <tr class="teacher-empty"><td colspan="6">暂无数据</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <div class="report-section">
-      <h3><span class="num">3</span>高频问题 TOP 5</h3>
-      <ul class="recent-list" id="crHotList">
-        <li style="color:#999">暂无数据</li>
-      </ul>
-    </div>
-    <div class="report-section">
-      <h3><span class="num">4</span>教学建议</h3>
-      <div class="suggestion-box" id="crSuggestion">
-        <strong>📌 暂无数据</strong>请先加载学生提问记录。
+      <!-- ★ 新增：班级报告面板 -->
+      <div class="teacher-panel hidden" id="teacherPanelClassReport">
+        <div class="dash-time-filter" id="classTimeFilter">
+          <button class="dash-time-btn active" data-range="week">本周</button>
+          <button class="dash-time-btn" data-range="month">本月</button>
+          <button class="dash-time-btn" data-range="all">全部</button>
+        </div>
+        <div class="dash-stats">
+          <div class="stat-card"><div class="stat-num">42</div><div class="stat-label">参与学生</div></div>
+          <div class="stat-card"><div class="stat-num">358</div><div class="stat-label">提问总数</div></div>
+          <div class="stat-card"><div class="stat-num">8.5</div><div class="stat-label">日均提问</div></div>
+          <div class="stat-card"><div class="stat-num">27</div><div class="stat-label">活跃学生(≥3次)</div></div>
+        </div>
+        <div class="report-section">
+          <h3><span class="num">1</span>全班知识点掌握情况</h3>
+          <div class="report-two-col">
+            <div class="dash-chart-card">
+              <div class="dash-chart-title">各章节平均掌握率</div>
+              <div class="dash-chart-box"><canvas id="classChapterBar"></canvas></div>
+            </div>
+            <div class="dash-chart-card">
+              <div class="dash-chart-title">重点/核心知识点全班掌握率</div>
+              <div style="padding:10px 0;">
+                <div class="progress-row"><span class="name">拉伸凸台/基体</span><div class="bar"><div class="bar-fill core" style="width:88%"></div></div><span class="pct">88%</span></div>
+                <div class="progress-row"><span class="name">旋转特征</span><div class="bar"><div class="bar-fill core" style="width:75%"></div></div><span class="pct">75%</span></div>
+                <div class="progress-row"><span class="name">装配配合</span><div class="bar"><div class="bar-fill key" style="width:62%"></div></div><span class="pct">62%</span></div>
+                <div class="progress-row"><span class="name">工程图视图</span><div class="bar"><div class="bar-fill key" style="width:55%"></div></div><span class="pct">55%</span></div>
+                <div class="progress-row"><span class="name">扫描/放样</span><div class="bar"><div class="bar-fill" style="width:32%"></div></div><span class="pct">32%</span></div>
+                <div class="progress-row"><span class="name">有限元分析</span><div class="bar"><div class="bar-fill" style="width:18%"></div></div><span class="pct">18%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="report-section">
+          <h3><span class="num">2</span>学生参与度 TOP 10</h3>
+          <div class="teacher-table-wrap">
+            <table class="teacher-table">
+              <thead><tr><th style="width:60px">排名</th><th>姓名</th><th>学号</th><th>提问数</th><th>已掌握知识点</th><th>最近提问</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>张三</td><td>2023001</td><td>28</td><td>35</td><td>今天 14:32</td></tr>
+                <tr><td>2</td><td>李四</td><td>2023002</td><td>24</td><td>30</td><td>今天 10:15</td></tr>
+                <tr><td>3</td><td>王五</td><td>2023003</td><td>19</td><td>28</td><td>昨天 21:08</td></tr>
+                <tr><td>4</td><td>赵六</td><td>2023004</td><td>17</td><td>22</td><td>昨天 18:44</td></tr>
+                <tr><td>5</td><td>钱七</td><td>2023005</td><td>15</td><td>20</td><td>昨天 16:20</td></tr>
+                <tr><td>6</td><td>孙八</td><td>2023006</td><td>13</td><td>18</td><td>2天前</td></tr>
+                <tr><td>7</td><td>周九</td><td>2023007</td><td>11</td><td>16</td><td>2天前</td></tr>
+                <tr><td>8</td><td>吴十</td><td>2023008</td><td>9</td><td>14</td><td>3天前</td></tr>
+                <tr><td>9</td><td>郑十一</td><td>2023009</td><td>8</td><td>12</td><td>3天前</td></tr>
+                <tr><td>10</td><td>王十二</td><td>2023010</td><td>7</td><td>11</td><td>4天前</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="report-section">
+          <h3><span class="num">3</span>本周高频问题 TOP 5</h3>
+          <ul class="recent-list">
+            <li><span class="q"><span class="tag learning">装配体</span>装配体中如何添加配合关系？</span><span class="t">28 次</span></li>
+            <li><span class="q"><span class="tag learning">草图特征</span>如何创建拉伸凸台特征？</span><span class="t">24 次</span></li>
+            <li><span class="q"><span class="tag learning">工程图</span>工程图怎么生成剖面视图？</span><span class="t">19 次</span></li>
+            <li><span class="q"><span class="tag learning">细节特征</span>如何在零件中添加圆角和倒角？</span><span class="t">15 次</span></li>
+            <li><span class="q"><span class="tag learning">扫描特征</span>如何使用扫描特征创建弹簧？</span><span class="t">12 次</span></li>
+          </ul>
+        </div>
+        <div class="report-section">
+          <h3><span class="num">4</span>教学建议</h3>
+          <div class="suggestion-box">
+            <strong>📌 重点关注：</strong>"扫描/放样"和"有限元分析"两个章节全班掌握率低于 35%，建议下周课堂增加案例演示。<br>
+            <strong>📌 表现优秀：</strong>"拉伸凸台/基体"掌握率达 88%，可适度加快教学进度。<br>
+            <strong>📌 参与度：</strong>27 名学生本周提问≥3次，占 64%；未参与学生 15 人，建议在下节课前提醒。
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -568,7 +625,7 @@
     </div>
   </div>
 
-  <!-- ==================== 学习报告弹窗（学生端，新增） ==================== -->
+  <!-- ★ 新增：学生学习报告弹窗 -->
   <div id="reportModal" class="modal-overlay hidden">
     <div class="modal modal-xl">
       <div class="modal-header">
@@ -582,19 +639,25 @@
       </div>
       <div class="modal-body">
         <div class="report-banner">
-          <span>👋 你好，<strong id="reportName">同学</strong>（学号 <span id="reportId">--</span>） · 本周学习概览</span>
+          <span>👋 你好，<strong>张三</strong>（学号 2023001） · 本周学习概览</span>
         </div>
 
         <div class="kg-personal-stats">
-          <div class="stat-card"><div class="stat-num" id="rpTotal">--</div><div class="stat-label">总知识点</div></div>
-          <div class="stat-card"><div class="stat-num" id="rpAsked">--</div><div class="stat-label">我已问过</div></div>
-          <div class="stat-card"><div class="stat-num" id="rpRate">--</div><div class="stat-label">我的覆盖率</div></div>
-          <div class="stat-card"><div class="stat-num" id="rpCount">--</div><div class="stat-label">我的提问数</div></div>
+          <div class="stat-card"><div class="stat-num">65</div><div class="stat-label">总知识点</div></div>
+          <div class="stat-card"><div class="stat-num">28</div><div class="stat-label">我已问过</div></div>
+          <div class="stat-card"><div class="stat-num">43%</div><div class="stat-label">我的覆盖率</div></div>
+          <div class="stat-card"><div class="stat-num">28</div><div class="stat-label">我的提问数</div></div>
         </div>
 
         <div class="report-section">
           <h3><span class="num">1</span>各章节掌握情况</h3>
-          <div id="reportChapterProgress"></div>
+          <div>
+            <div class="progress-row"><span class="name">第1章 草图特征</span><div class="bar"><div class="bar-fill" style="width:80%"></div></div><span class="pct">80%</span></div>
+            <div class="progress-row"><span class="name">第2章 基础特征</span><div class="bar"><div class="bar-fill" style="width:60%"></div></div><span class="pct">60%</span></div>
+            <div class="progress-row"><span class="name">第3章 装配体设计</span><div class="bar"><div class="bar-fill key" style="width:45%"></div></div><span class="pct">45%</span></div>
+            <div class="progress-row"><span class="name">第4章 工程图</span><div class="bar"><div class="bar-fill key" style="width:30%"></div></div><span class="pct">30%</span></div>
+            <div class="progress-row"><span class="name">第5章 高级应用</span><div class="bar"><div class="bar-fill core" style="width:15%"></div></div><span class="pct">15%</span></div>
+          </div>
         </div>
 
         <div class="report-section">
@@ -604,15 +667,26 @@
 
         <div class="report-section">
           <h3><span class="num">3</span>最近 10 条提问</h3>
-          <ul class="recent-list" id="reportRecentList"></ul>
+          <ul class="recent-list">
+            <li><span class="q"><span class="tag mastered">已掌握</span>如何创建拉伸凸台特征？</span><span class="t">今天 14:32</span></li>
+            <li><span class="q"><span class="tag mastered">已掌握</span>草图绘制时如何添加尺寸约束？</span><span class="t">今天 10:15</span></li>
+            <li><span class="q"><span class="tag learning">学习中</span>装配体中如何添加配合关系？</span><span class="t">昨天 21:08</span></li>
+            <li><span class="q"><span class="tag learning">学习中</span>旋转特征的轴线如何选择？</span><span class="t">昨天 18:44</span></li>
+            <li><span class="q"><span class="tag learning">学习中</span>工程图怎么生成剖面视图？</span><span class="t">昨天 16:20</span></li>
+            <li><span class="q"><span class="tag weak">待加强</span>如何使用扫描特征创建弹簧？</span><span class="t">2天前</span></li>
+            <li><span class="q"><span class="tag weak">待加强</span>如何在装配体中进行零件镜像？</span><span class="t">2天前</span></li>
+            <li><span class="q"><span class="tag mastered">已掌握</span>如何在零件中添加圆角？</span><span class="t">3天前</span></li>
+            <li><span class="q"><span class="tag mastered">已掌握</span>如何进行零件的镜像操作？</span><span class="t">3天前</span></li>
+            <li><span class="q"><span class="tag learning">学习中</span>什么是BOM表？</span><span class="t">4天前</span></li>
+          </ul>
         </div>
 
         <div class="report-section">
           <h3><span class="num">4</span>学习建议</h3>
           <div class="suggestion-box">
-            <strong>📌 学习节奏：</strong>继续保持提问习惯，建议每天 2-3 个问题。<br>
-            <strong>📌 重点突破：</strong>覆盖率较低的章节建议优先学习。<br>
-            <strong>📌 复习建议：</strong>定期回顾已问过的知识点，巩固掌握。
+            <strong>📌 表现优秀：</strong>"第1章 草图特征"掌握率达 80%，基础扎实。<br>
+            <strong>📌 重点突破：</strong>"第5章 高级应用"覆盖率仅 15%，建议优先学习「扫描/放样」相关知识点。<br>
+            <strong>📌 学习节奏：</strong>本周已提问 12 次，学习积极；建议保持每天 2-3 个问题的频率。
           </div>
         </div>
       </div>
@@ -623,7 +697,117 @@
   <div id="toast" class="toast hidden"></div>
 
 </div>
-<script src="js/knowledge-graph.js"></script>
-<script src="js/app.js"></script>
+<script>
+/* ============== Demo 专用脚本：只做视图切换和弹窗显隐 ============== */
+(function() {
+  const $ = (id) => document.getElementById(id);
+  const show = (id) => $(id).classList.remove('hidden');
+  const hide = (id) => $(id).classList.add('hidden');
+
+  // 模拟登录
+  $('loginBtn').onclick = () => {
+    const name = $('loginName').value.trim() || '张三';
+    const sid  = $('loginId').value.trim() || '2023001';
+    $('sidebarName').textContent = name;
+    $('sidebarId').textContent = '学号 ' + sid;
+    $('topbarUser').textContent = name;
+    hide('loginView'); show('chatView');
+  };
+
+  // 教师入口（模拟）
+  $('loginTeacherBtn').onclick = () => { show('teacherPwdModal'); };
+  $('closeTeacherPwd').onclick = () => hide('teacherPwdModal');
+  $('cancelTeacherPwd').onclick = () => hide('teacherPwdModal');
+  $('confirmTeacherPwd').onclick = () => { hide('teacherPwdModal'); hide('loginView'); show('teacherView'); };
+
+  // 退出登录
+  $('logoutBtn').onclick = () => { hide('chatView'); show('loginView'); };
+  $('teacherBackBtn').onclick = () => { hide('teacherView'); show('loginView'); };
+
+  // 设置/帮助/示例
+  $('teacherSettingsBtn').onclick = () => show('settingsModal');
+  $('closeSettings').onclick = $('cancelSettings').onclick = () => hide('settingsModal');
+  $('saveSettings').onclick = () => { hide('settingsModal'); alert('已保存'); };
+  $('exampleBtn').onclick = () => show('exampleModal');
+  $('closeExample').onclick = () => hide('exampleModal');
+
+  // ★ 学习报告按钮
+  $('reportBtn').onclick = () => {
+    show('reportModal');
+    setTimeout(renderStudentTrend, 100);
+  };
+  $('closeReport').onclick = () => hide('reportModal');
+
+  // 知识图谱
+  $('knowledgeGraphBtn').onclick = () => show('knowledgeGraphModal');
+  $('closeKnowledgeGraph').onclick = () => hide('knowledgeGraphModal');
+
+  // 教师后台 tab 切换
+  document.querySelectorAll('.teacher-tab').forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll('.teacher-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const target = tab.dataset.tab;
+      ['records','kg','dashboard','classReport'].forEach(k => {
+        const panelId = k === 'records' ? 'teacherPanelRecords'
+                       : k === 'kg' ? 'teacherPanelKg'
+                       : k === 'dashboard' ? 'teacherPanelDashboard'
+                       : 'teacherPanelClassReport';
+        const panel = $(panelId);
+        if (panel) (k === target ? panel.classList.remove('hidden') : panel.classList.add('hidden'));
+      });
+      if (target === 'classReport') setTimeout(renderClassChapterBar, 100);
+    };
+  });
+
+  // 主题切换
+  $('themeToggle').onclick = () => {
+    document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  };
+
+  // 学生提问趋势
+  function renderStudentTrend() {
+    const ctx = document.getElementById('studentTrendChart');
+    if (!ctx || ctx._rendered) return;
+    ctx._rendered = true;
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['7/25','7/26','7/27','7/28','7/29','7/30','7/31'],
+        datasets: [{
+          label: '提问数',
+          data: [3, 5, 4, 6, 5, 2, 3],
+          borderColor: '#185FA5', backgroundColor: 'rgba(24,95,165,0.1)',
+          fill: true, tension: 0.35, pointRadius: 4
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+        plugins: { legend: { display: false } } }
+    });
+  }
+
+  // 班级章节柱状图
+  function renderClassChapterBar() {
+    const ctx = document.getElementById('classChapterBar');
+    if (!ctx || ctx._rendered) return;
+    ctx._rendered = true;
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['第1章','第2章','第3章','第4章','第5章'],
+        datasets: [{
+          label: '平均掌握率(%)',
+          data: [80, 60, 45, 55, 25],
+          backgroundColor: ['#5B9BD5','#5B9BD5','#D99858','#D99858','#E16C6C']
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        scales: { x: { beginAtZero: true, max: 100 } },
+        plugins: { legend: { display: false } } }
+    });
+  }
+})();
+</script>
 </body>
 </html>

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>【Demo预览】报告功能 - 计算机辅助设计AI教学助手</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    /* 仅Demo预览使用：顶部高亮提示 */
+    .demo-banner {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+      background: #fff3cd; border-bottom: 2px solid #ffc107; color: #856404;
+      padding: 8px 16px; font-size: 13px; text-align: center;
+    }
+    .demo-banner b { color: #c00; }
+    body { padding-top: 40px; }
+  </style>
+</head>
+<body>
+
+<div class="demo-banner">
+  📋 <b>Demo预览</b> · 严格基于 PUSH版本 be1acd7 · 唯一新增：①学生侧栏「学习报告」按钮 ②教师后台「班级报告」tab · 其它一字未改
+</div>
+
+<div id="app">
+
+  <!-- ==================== 登录视图（原版）==================== -->
+  <div id="loginView" class="view view-login">
+    <div class="login-card">
+      <div class="login-logo">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <h1 class="login-title">计算机辅助设计AI教学助手</h1>
+      <p class="login-subtitle">请输入信息登录，开始你的学习之旅</p>
+      <div class="login-form">
+        <div class="form-group">
+          <label for="loginName">姓名</label>
+          <input type="text" id="loginName" placeholder="请输入姓名" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="loginId">学号</label>
+          <input type="text" id="loginId" placeholder="请输入学号" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="loginCode">班级口令<span class="label-optional">（可选）</span></label>
+          <input type="password" id="loginCode" placeholder="教师设置的口令" autocomplete="off">
+        </div>
+        <button id="loginBtn" class="btn btn-primary btn-block">进入学习</button>
+      </div>
+      <div class="login-teacher-link" id="loginTeacherBtn">教师入口</div>
+      <div class="login-error" id="loginError"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 对话视图（原版+1处新增）==================== -->
+  <div id="chatView" class="view view-chat">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="sidebarToggle" class="icon-btn sidebar-toggle" aria-label="菜单">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div class="topbar-logo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <h1 class="topbar-title" id="topbarTitle">计算机辅助设计AI教学助手</h1>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-user" id="topbarUser">李同学</span>
+        <button id="themeToggle" class="icon-btn" title="切换主题" aria-label="切换主题">
+          <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+        <button id="logoutBtn" class="icon-btn" title="退出登录" aria-label="退出登录">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="chat-layout">
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">学生信息</div>
+          <div class="sidebar-card">
+            <div class="sidebar-card-name">李同学</div>
+            <div class="sidebar-card-sub">2024010123</div>
+          </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">快捷功能</div>
+          <div class="sidebar-actions">
+            <!-- 🆕 新增：学习报告按钮（在知识图谱上面） -->
+            <button class="sidebar-btn" id="reportBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+              <span>学习报告</span>
+            </button>
+            <!-- 原有：知识图谱 -->
+            <button class="sidebar-btn" id="knowledgeGraphBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <circle cx="4" cy="6" r="2"/>
+                <circle cx="20" cy="6" r="2"/>
+                <circle cx="4" cy="18" r="2"/>
+                <circle cx="20" cy="18" r="2"/>
+                <line x1="6" y1="7" x2="10" y2="11"/>
+                <line x1="18" y1="7" x2="14" y2="11"/>
+                <line x1="6" y1="17" x2="10" y2="13"/>
+                <line x1="18" y1="17" x2="14" y2="13"/>
+              </svg>
+              <span>知识图谱</span>
+            </button>
+            <!-- 原有：设计帮助文档 -->
+            <button class="sidebar-btn" id="helpBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+              <span>设计帮助文档</span>
+            </button>
+            <!-- 原有：提问示例 -->
+            <button class="sidebar-btn" id="exampleBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span>提问示例</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">对话</div>
+          <div class="sidebar-actions">
+            <button class="sidebar-btn" id="clearBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+              <span>清空对话</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-spacer"></div>
+      </aside>
+
+      <main class="chat-main">
+        <div class="messages" id="messages">
+          <div class="welcome-screen" id="welcomeScreen">
+            <div class="welcome-icon">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+            <h2 id="welcomeTitle">你好！我是 计算机辅助设计AI教学助手</h2>
+            <p id="welcomeSubtitle">可以问我任何关于计算机辅助设计操作的问题</p>
+            <div class="suggestions" id="suggestions">
+              <button class="suggestion-card" data-text="如何创建拉伸凸台特征？">
+                <span class="suggestion-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+                </span>
+                <span>如何创建拉伸凸台特征？</span>
+              </button>
+              <button class="suggestion-card" data-text="装配体中如何添加配合关系？">
+                <span class="suggestion-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><line x1="9" y1="6" x2="18" y2="6"/><line x1="6" y1="9" x2="6" y2="18"/><line x1="15" y1="18" x2="18" y2="15"/></svg>
+                </span>
+                <span>装配体中如何添加配合关系？</span>
+              </button>
+              <button class="suggestion-card" data-text="工程图怎么生成剖面视图？">
+                <span class="suggestion-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+                </span>
+                <span>工程图怎么生成剖面视图？</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <footer class="input-area">
+          <div class="input-wrapper">
+            <textarea id="messageInput" class="message-input" placeholder="输入你的问题..." rows="1" autocomplete="off"></textarea>
+            <button id="sendBtn" class="send-btn" title="发送" aria-label="发送">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            </button>
+            <button id="stopBtn" class="stop-btn hidden" title="停止生成" aria-label="停止生成">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="6" width="12" height="12" rx="2"/>
+              </svg>
+            </button>
+          </div>
+          <div class="input-hint">
+            <span>按 <kbd>Enter</kbd> 发送，<kbd>Shift</kbd>+<kbd>Enter</kbd> 换行</span>
+            <span class="char-count" id="charCount"></span>
+          </div>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <!-- ==================== 教师后台视图（原版+1处新增）==================== -->
+  <div id="teacherView" class="view view-teacher hidden">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="teacherBackBtn" class="icon-btn" title="返回" aria-label="返回">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+        </button>
+        <h1 class="topbar-title">学生提问记录</h1>
+      </div>
+      <div class="topbar-right">
+        <button id="teacherSettingsBtn" class="icon-btn" title="系统设置" aria-label="系统设置">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+        <button id="teacherRefreshBtn" class="icon-btn" title="刷新" aria-label="刷新">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/>
+            <polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="teacher-body">
+      <nav class="teacher-tabs">
+        <button class="teacher-tab active" data-tab="records">提问记录</button>
+        <button class="teacher-tab" data-tab="kg">知识图谱</button>
+        <button class="teacher-tab" data-tab="dashboard">评价看板</button>
+        <!-- 🆕 新增：班级报告 tab -->
+        <button class="teacher-tab" data-tab="classreport">班级报告</button>
+      </nav>
+
+      <!-- 提问记录面板（原版）-->
+      <div class="teacher-panel" id="teacherPanelRecords">
+        <div class="teacher-stats" id="teacherStats">
+          <div class="stat-card">
+            <div class="stat-num" id="statStudents">32</div>
+            <div class="stat-label">参与学生</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="statTotal">156</div>
+            <div class="stat-label">提问总数</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="statToday">18</div>
+            <div class="stat-label">今日提问</div>
+          </div>
+        </div>
+        <div class="teacher-toolbar">
+          <input type="text" id="teacherSearch" class="teacher-search" placeholder="搜索学生姓名或问题...">
+          <select id="teacherFilter" class="teacher-filter">
+            <option value="">全部类型</option>
+            <option value="对话">对话</option>
+          </select>
+          <button id="teacherExportBtn" class="btn btn-secondary btn-sm">导出 CSV</button>
+        </div>
+        <div class="teacher-table-wrap">
+          <table class="teacher-table" id="teacherTable">
+            <thead>
+              <tr>
+                <th style="width:70px">时间</th>
+                <th style="width:80px">学生</th>
+                <th style="width:90px">学号</th>
+                <th>问题内容</th>
+                <th style="width:70px">类型</th>
+              </tr>
+            </thead>
+            <tbody id="teacherTableBody">
+              <tr><td style="color:var(--text-3)">14:23</td><td>张同学</td><td>2024010101</td><td class="q">如何创建圆周阵列？</td><td><span class="tag tag-operation">对话</span></td></tr>
+              <tr><td style="color:var(--text-3)">14:18</td><td>李同学</td><td>2024010102</td><td class="q">拉伸切除与拉伸凸台的区别？</td><td><span class="tag tag-operation">对话</span></td></tr>
+              <tr><td style="color:var(--text-3)">14:05</td><td>王同学</td><td>2024010103</td><td class="q">装配体的配合关系怎么设置？</td><td><span class="tag tag-operation">对话</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 知识图谱面板（原版占位）-->
+      <div class="teacher-panel hidden" id="teacherPanelKg">
+        <p style="text-align:center; padding:40px; color:var(--text-3);">教师知识图谱面板（原版内容）</p>
+      </div>
+
+      <!-- 评价看板面板（原版占位）-->
+      <div class="teacher-panel hidden" id="teacherPanelDashboard">
+        <p style="text-align:center; padding:40px; color:var(--text-3);">评价看板面板（原版内容）</p>
+      </div>
+
+      <!-- 🆕 新增：班级报告面板 -->
+      <div class="teacher-panel hidden" id="teacherPanelClassReport">
+        <div class="dash-time-filter">
+          <button class="dash-time-btn active" data-range="week">本周</button>
+          <button class="dash-time-btn" data-range="month">本月</button>
+          <button class="dash-time-btn" data-range="year">本年</button>
+        </div>
+
+        <div class="dash-stats">
+          <div class="stat-card">
+            <div class="stat-num">32</div>
+            <div class="stat-label">参与学生</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">156</div>
+            <div class="stat-label">提问总数</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">87%</div>
+            <div class="stat-label">平均参与率</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">4.9</div>
+            <div class="stat-label">人均提问</div>
+          </div>
+        </div>
+
+        <div class="dash-charts">
+          <div class="dash-chart-card">
+            <div class="dash-chart-title">知识点频次 TOP 15</div>
+            <div class="dash-chart-box"><canvas id="dashBarChart"></canvas></div>
+          </div>
+          <div class="dash-chart-card">
+            <div class="dash-chart-title">章节提问占比</div>
+            <div class="dash-chart-box dash-chart-doughnut">
+              <canvas id="dashDoughnutChart"></canvas>
+              <div class="dash-legend" id="dashDoughnutLegend"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-rank-card">
+          <div class="dash-chart-title">学生参与度排名</div>
+          <table class="dash-rank-table" id="dashRankTable">
+            <thead>
+              <tr><th style="width:60px">排名</th><th>姓名</th><th>学号</th><th>提问数</th><th>涉及知识点</th><th>最近提问</th></tr>
+            </thead>
+            <tbody>
+              <tr class="rank-1"><td class="rank-no">1</td><td>张同学</td><td>2024010101</td><td>18</td><td>12</td><td>今天 14:23</td></tr>
+              <tr class="rank-2"><td class="rank-no">2</td><td>李同学</td><td>2024010102</td><td>15</td><td>10</td><td>今天 14:18</td></tr>
+              <tr class="rank-3"><td class="rank-no">3</td><td>王同学</td><td>2024010103</td><td>12</td><td>9</td><td>今天 14:05</td></tr>
+              <tr><td class="rank-no">4</td><td>刘同学</td><td>2024010104</td><td>10</td><td>8</td><td>昨天</td></tr>
+              <tr><td class="rank-no">5</td><td>陈同学</td><td>2024010105</td><td>8</td><td>6</td><td>昨天</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 🆕 新增：学生学习报告弹窗 ==================== -->
+  <div id="reportModal" class="modal-overlay hidden">
+    <div class="modal modal-xl">
+      <div class="modal-header">
+        <h2>我的学习报告</h2>
+        <button id="closeReport" class="icon-btn" aria-label="关闭">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" style="max-height:78vh;">
+        <!-- 4 张个人统计卡（复用原版 .stat-card 样式）-->
+        <div class="kg-personal-stats">
+          <div class="stat-card"><div class="stat-num">65</div><div class="stat-label">总知识点</div></div>
+          <div class="stat-card"><div class="stat-num">13</div><div class="stat-label">我已问过</div></div>
+          <div class="stat-card"><div class="stat-num">20%</div><div class="stat-label">我的覆盖率</div></div>
+          <div class="stat-card"><div class="stat-num">28</div><div class="stat-label">我的提问数</div></div>
+        </div>
+
+        <!-- 知识点掌握情况（复用原版 .dash-chart-card 样式）-->
+        <div class="dash-charts" style="margin-bottom:16px;">
+          <div class="dash-chart-card">
+            <div class="dash-chart-title">各章节掌握进度</div>
+            <div style="font-size:13px; color:var(--text-2); line-height:1.9;">
+              <div style="display:flex;justify-content:space-between;"><span>第1章 草图设计</span><span style="color:var(--primary);font-weight:600;">100%</span></div>
+              <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:8px;"><div style="width:100%;height:100%;background:var(--primary);"></div></div>
+
+              <div style="display:flex;justify-content:space-between;"><span>第2章 基础特征</span><span style="color:var(--primary);font-weight:600;">88%</span></div>
+              <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:8px;"><div style="width:88%;height:100%;background:var(--primary);"></div></div>
+
+              <div style="display:flex;justify-content:space-between;"><span>第3章 工程特征</span><span style="color:#f59e0b;font-weight:600;">67%</span></div>
+              <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:8px;"><div style="width:67%;height:100%;background:#f59e0b;"></div></div>
+
+              <div style="display:flex;justify-content:space-between;"><span>第4章 装配体</span><span style="color:var(--primary);font-weight:600;">83%</span></div>
+              <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:8px;"><div style="width:83%;height:100%;background:var(--primary);"></div></div>
+
+              <div style="display:flex;justify-content:space-between;"><span>第5章 工程图</span><span style="color:#ef4444;font-weight:600;">50%</span></div>
+              <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;"><div style="width:50%;height:100%;background:#ef4444;"></div></div>
+            </div>
+          </div>
+
+          <div class="dash-chart-card">
+            <div class="dash-chart-title">我最近的提问</div>
+            <table class="teacher-table" style="width:100%;">
+              <tbody>
+                <tr><td style="color:var(--text-3);width:80px;">14:23</td><td class="q">如何创建圆周阵列？</td></tr>
+                <tr><td style="color:var(--text-3);">昨天</td><td class="q">拉伸切除与拉伸凸台的区别？</td></tr>
+                <tr><td style="color:var(--text-3);">2天前</td><td class="q">基准面的作用及创建方法？</td></tr>
+                <tr><td style="color:var(--text-3);">3天前</td><td class="q">装配体的配合关系怎么设置？</td></tr>
+                <tr><td style="color:var(--text-3);">5天前</td><td class="q">工程图怎么生成剖面视图？</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 学习建议 -->
+        <div class="dash-rank-card">
+          <div class="dash-chart-title">💡 个性化学习建议</div>
+          <div style="font-size:14px; line-height:1.8; color:var(--text-2); padding:8px 0;">
+            <p style="margin-bottom:10px;">✨ <strong style="color:var(--text);">建议重点复习：</strong></p>
+            <ul style="padding-left:24px; margin-bottom:14px;">
+              <li><strong>第3章 工程特征</strong> - 抽壳特征掌握较弱，建议复习薄壁零件建模思路</li>
+              <li><strong>第5章 工程图</strong> - 剖面视图生成不熟练，建议多做练习</li>
+            </ul>
+            <p style="margin-bottom:10px;">✅ <strong style="color:var(--text);">掌握良好：</strong></p>
+            <ul style="padding-left:24px;">
+              <li><strong>第1章 草图设计</strong> - 基础绘制掌握扎实，保持练习</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+  // ==================== 视图切换（Demo 简化版）====================
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(function(v) { v.classList.add('hidden'); });
+    if (name === 'login')  document.getElementById('loginView').classList.remove('hidden');
+    if (name === 'chat')   document.getElementById('chatView').classList.remove('hidden');
+    if (name === 'teacher') document.getElementById('teacherView').classList.remove('hidden');
+  }
+
+  // ==================== 教师 tab 切换 ====================
+  document.querySelectorAll('.teacher-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.teacher-tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.teacher-panel').forEach(function(p) { p.classList.add('hidden'); });
+      tab.classList.add('active');
+      var t = tab.dataset.tab;
+      if (t === 'records')      document.getElementById('teacherPanelRecords').classList.remove('hidden');
+      if (t === 'kg')           document.getElementById('teacherPanelKg').classList.remove('hidden');
+      if (t === 'dashboard')    document.getElementById('teacherPanelDashboard').classList.remove('hidden');
+      if (t === 'classreport') {
+        document.getElementById('teacherPanelClassReport').classList.remove('hidden');
+        renderClassReportCharts();
+      }
+    });
+  });
+
+  // ==================== 学习报告弹窗 ====================
+  document.getElementById('reportBtn').addEventListener('click', function() {
+    document.getElementById('reportModal').classList.remove('hidden');
+  });
+  document.getElementById('closeReport').addEventListener('click', function() {
+    document.getElementById('reportModal').classList.add('hidden');
+  });
+  document.getElementById('reportModal').addEventListener('click', function(e) {
+    if (e.target.id === 'reportModal') document.getElementById('reportModal').classList.add('hidden');
+  });
+
+  // ==================== 教师后台 时间筛选 ====================
+  document.querySelectorAll('.dash-time-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var parent = btn.parentElement;
+      parent.querySelectorAll('.dash-time-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+    });
+  });
+
+  // ==================== 班级报告 图表渲染 ====================
+  var chartsRendered = false;
+  function renderClassReportCharts() {
+    if (chartsRendered) return;
+    chartsRendered = true;
+
+    // 柱状图 - 知识点频次 TOP 15
+    var barCtx = document.getElementById('dashBarChart');
+    if (barCtx) {
+      new Chart(barCtx.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: ['拉伸凸台', '拉伸切除', '圆周阵列', '装配配合', '基准面', '旋转特征', '扫描特征', '工程图', '剖面视图', '倒角', '圆角', '抽壳', '筋特征', '方程式', '镜像'],
+          datasets: [{
+            label: '提问次数',
+            data: [28, 22, 18, 16, 14, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2],
+            backgroundColor: '#185FA5',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { font: { size: 11 } } }, x: { ticks: { font: { size: 11 }, maxRotation: 45, minRotation: 30 } } }
+        }
+      });
+    }
+
+    // 环形图 - 章节占比
+    var doughCtx = document.getElementById('dashDoughnutChart');
+    if (doughCtx) {
+      new Chart(doughCtx.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: ['第1章 草图设计', '第2章 基础特征', '第3章 工程特征', '第4章 装配体', '第5章 工程图'],
+          datasets: [{
+            data: [30, 45, 28, 32, 21],
+            backgroundColor: ['#185FA5', '#378ADD', '#5BA8E8', '#7BC4F0', '#A8D8F5'],
+            borderWidth: 2, borderColor: '#fff'
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '60%' }
+      });
+    }
+
+    // 自定义图例
+    var legendEl = document.getElementById('dashDoughnutLegend');
+    if (legendEl) {
+      var items = [
+        { name: '第1章 草图设计', val: 30, color: '#185FA5' },
+        { name: '第2章 基础特征', val: 45, color: '#378ADD' },
+        { name: '第3章 工程特征', val: 28, color: '#5BA8E8' },
+        { name: '第4章 装配体', val: 32, color: '#7BC4F0' },
+        { name: '第5章 工程图', val: 21, color: '#A8D8F5' }
+      ];
+      legendEl.innerHTML = items.map(function(it) {
+        return '<div class="dash-legend-row"><span class="dash-legend-dot" style="background:'+it.color+'"></span><span class="dash-legend-name">'+it.name+'</span><span class="dash-legend-val">'+it.val+'次</span></div>';
+      }).join('');
+    }
+  }
+
+  // ==================== Demo 默认状态：教师后台-班级报告 ====================
+  showView('teacher');
+  document.querySelector('.teacher-tab[data-tab="classreport"]').click();
+
+  // 顶栏教师返回按钮
+  document.getElementById('teacherBackBtn').addEventListener('click', function() {
+    showView('login');
+  });
+</script>
+
+</body>
+</html>

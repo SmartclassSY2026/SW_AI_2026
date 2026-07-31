@@ -74,7 +74,9 @@
       "knowledgeGraphBtn","knowledgeGraphModal","closeKnowledgeGraph",
       "kgSearchInput","kgLevelFilter","kgChapters",
       "kgPersonalStats","kgStuStatTotal","kgStuStatAsked","kgStuStatRate","kgStuStatQuestions",
-      "teacherPanelRecords","teacherPanelKg","teacherPanelDashboard",
+      "teacherPanelRecords","teacherPanelKg","teacherPanelDashboard","teacherPanelClassReport",
+      "classTimeFilter","classChapterBar","reportBtn","reportModal","closeReport",
+      "reportName","reportId","rpTotal","rpAsked","rpRate","rpCount","reportChapterProgress","reportRecentList","studentTrendChart",
       "kgStats","kgStatTotal","kgStatCovered","kgStatRate","kgStatCore",
       "kgSearchInputT","kgLevelFilterT","kgCoverFilterT","kgChaptersT",
       "dashTimeFilter","dashStats","dashStatStudents","dashStatTotal","dashStatAvg","dashStatActive",
@@ -918,18 +920,23 @@
     el.closeKnowledgeGraph.addEventListener("click", closeStudentKG);
     el.knowledgeGraphModal.addEventListener("click", function (e) { if (e.target === el.knowledgeGraphModal) closeStudentKG(); });
     el.kgSearchInput.addEventListener("input", function () { renderStudentKG(); });
-    el.kgLevelFilter.addEventListener("click", function (e) {
-      var btn = e.target.closest(".kg-level-btn"); if (!btn) return;
-      for (var i = 0; i < el.kgLevelFilter.children.length; i++) el.kgLevelFilter.children[i].classList.remove("active");
-      btn.classList.add("active"); renderStudentKG();
-    });
+el.kgLevelFilter.addEventListener("click", function (e) {
+ var btn = e.target.closest(".kg-level-btn"); if (!btn) return;
+ for (var i = 0; i < el.kgLevelFilter.children.length; i++) el.kgLevelFilter.children[i].classList.remove("active");
+ btn.classList.add("active"); renderStudentKG();
+});
 
-    // 教师后台 tab 切换
-    for (var ti = 0; ti < el.teacherTabs.length; ti++) {
-      el.teacherTabs[ti].addEventListener("click", function (b) {
-        return function () { switchTeacherTab(b.dataset.tab); };
-      }(el.teacherTabs[ti]));
-    }
+// ★ 新增：学习报告按钮
+el.reportBtn.addEventListener("click", function () { openReportModal(); });
+el.closeReport.addEventListener("click", closeReportModal);
+if (el.reportModal) el.reportModal.addEventListener("click", function (e) { if (e.target === el.reportModal) closeReportModal(); });
+
+// 教师后台 tab 切换
+for (var ti = 0; ti < el.teacherTabs.length; ti++) {
+ el.teacherTabs[ti].addEventListener("click", function (b) {
+   return function () { switchTeacherTab(b.dataset.tab); };
+ }(el.teacherTabs[ti]));
+}
 
     // 教师知识图谱筛选
     el.kgSearchInputT.addEventListener("input", function () { renderTeacherKG(); });
@@ -951,12 +958,20 @@
       btn.classList.add("active"); renderDashboard();
     });
 
+    // 班级报告时间筛选
+    el.classTimeFilter.addEventListener("click", function (e) {
+      var btn = e.target.closest(".dash-time-btn"); if (!btn) return;
+      for (var i = 0; i < el.classTimeFilter.children.length; i++) el.classTimeFilter.children[i].classList.remove("active");
+      btn.classList.add("active"); renderClassReport();
+    });
+
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") {
         if (!el.settingsModal.classList.contains("hidden")) closeSettingsModal();
         if (!el.teacherPwdModal.classList.contains("hidden")) el.teacherPwdModal.classList.add("hidden");
         if (!el.exampleModal.classList.contains("hidden")) el.exampleModal.classList.add("hidden");
         if (!el.knowledgeGraphModal.classList.contains("hidden")) closeStudentKG();
+        if (el.reportModal && !el.reportModal.classList.contains("hidden")) closeReportModal();
       }
     });
   }
@@ -1104,11 +1119,13 @@
       var t = el.teacherTabs[i];
       if (t.dataset.tab === name) t.classList.add("active"); else t.classList.remove("active");
     }
-    el.teacherPanelRecords.classList.toggle("hidden", name !== "records");
-    el.teacherPanelKg.classList.toggle("hidden", name !== "kg");
-    el.teacherPanelDashboard.classList.toggle("hidden", name !== "dashboard");
-    if (name === "kg") renderTeacherKG();
-    else if (name === "dashboard") renderDashboard();
+el.teacherPanelRecords.classList.toggle("hidden", name !== "records");
+el.teacherPanelKg.classList.toggle("hidden", name !== "kg");
+el.teacherPanelDashboard.classList.toggle("hidden", name !== "dashboard");
+el.teacherPanelClassReport.classList.toggle("hidden", name !== "classReport");
+if (name === "kg") renderTeacherKG();
+else if (name === "dashboard") renderDashboard();
+else if (name === "classReport") renderClassReport();
   }
 
   // ==================== Teacher Knowledge Graph (带热度+覆盖) ====================
@@ -1350,16 +1367,266 @@
     return true;
   }
 
-  function bindChapterToggle(container) {
-    var heads = container.querySelectorAll(".kg-chapter-head");
-    for (var i = 0; i < heads.length; i++) {
-      heads[i].addEventListener("click", function (h) {
-        return function () { h.parentElement.classList.toggle("open"); };
-      }(heads[i]));
+function bindChapterToggle(container) {
+ var heads = container.querySelectorAll(".kg-chapter-head");
+ for (var i = 0; i < heads.length; i++) {
+   heads[i].addEventListener("click", function (h) {
+     return function () { h.parentElement.classList.toggle("open"); };
+   }(heads[i]));
+ }
+}
+
+// ==================== Report Modal（学生端学习报告 + 教师端班级报告） ====================
+function openReportModal() {
+ if (!el.reportModal) return;
+ if (state.student) {
+   el.reportName.textContent = state.student.name || "";
+   el.reportId.textContent = state.student.id || "";
+ }
+
+ // 从 state.messages 提取该学生的 user 提问（去重）
+ var userQuestions = [];
+ var seenQ = {};
+ for (var mi = 0; mi < state.messages.length; mi++) {
+   var m = state.messages[mi];
+   if (m && m.role === "user" && m.content && !seenQ[m.content]) {
+     seenQ[m.content] = true;
+     userQuestions.push({ question: m.content, time: m.time });
+   }
+ }
+
+ // 用提问匹配知识点，计算 heat
+ var points = buildPointIndex();
+ var total = points.length;
+ var askedSet = {};
+ for (var qi = 0; qi < userQuestions.length; qi++) {
+   var pt = matchQuestionToPoint(userQuestions[qi].question);
+   if (pt) askedSet[pt.name] = true;
+ }
+ var asked = 0;
+ for (var k in askedSet) asked++;
+
+ el.rpTotal.textContent = total;
+ el.rpAsked.textContent = asked;
+ el.rpRate.textContent = total ? Math.round(asked / total * 100) + "%" : "0%";
+ el.rpCount.textContent = userQuestions.length;
+
+ // 章节进度
+ var kgData = (typeof KNOWLEDGE_GRAPH !== "undefined" ? KNOWLEDGE_GRAPH : { chapters: [] });
+ var chapters = kgData.chapters || [];
+ var html = "";
+ for (var c = 0; c < chapters.length; c++) {
+   var ch = chapters[c];
+   var pts = [];
+   for (var si = 0; si < (ch.sections || []).length; si++) {
+     for (var gi = 0; gi < (ch.sections[si].groups || []).length; gi++) {
+       for (var pi = 0; pi < (ch.sections[si].groups[gi].points || []).length; pi++) {
+         pts.push(ch.sections[si].groups[gi].points[pi].name);
+       }
+     }
+   }
+   var covered = 0;
+   for (var q = 0; q < pts.length; q++) if (askedSet[pts[q]]) covered++;
+   var pct = pts.length ? Math.round(covered / pts.length * 100) : 0;
+   html += '<div class="progress-row"><span class="name">第' + ch.id + '章 ' + escapeHtml(ch.name) + '</span>';
+   html += '<div class="bar"><div class="bar-fill" style="width:' + pct + '%; background:' + ch.color + '"></div></div>';
+   html += '<span class="pct">' + pct + '%</span></div>';
+ }
+ el.reportChapterProgress.innerHTML = html;
+
+ // 最近提问（最近10条，按时间倒序）
+ userQuestions.sort(function (a, b) { return (b.time || "").localeCompare(a.time || ""); });
+ var listHtml = "";
+ for (var m = 0; m < Math.min(userQuestions.length, 10); m++) {
+   var r = userQuestions[m];
+   listHtml += '<li><span class="q">' + escapeHtml(r.question || "") + '</span><span class="t">' + (r.time ? formatDateTime(r.time) : "") + '</span></li>';
+ }
+ el.reportRecentList.innerHTML = listHtml || '<li style="color:#999">暂无提问记录</li>';
+
+ // 趋势图
+ setTimeout(renderStudentTrend, 100);
+
+ el.reportModal.classList.remove("hidden");
+}
+function closeReportModal() {
+ if (el.reportModal) el.reportModal.classList.add("hidden");
+}
+
+function renderStudentTrend() {
+ if (!el.studentTrendChart) return;
+ if (el.studentTrendChart._chart) { el.studentTrendChart._chart.destroy(); }
+ // 从 state.messages 提取近7天每天的提问数
+ var now = new Date();
+ var labels = [], data = [];
+ for (var d = 6; d >= 0; d--) {
+   var day = new Date(now);
+   day.setDate(now.getDate() - d);
+   day.setHours(0, 0, 0, 0);
+   var next = new Date(day);
+   next.setDate(day.getDate() + 1);
+   var count = 0;
+   for (var i = 0; i < state.messages.length; i++) {
+     var m = state.messages[i];
+     if (m && m.role === "user" && m.time) {
+       var t = new Date(m.time);
+       if (t >= day && t < next) count++;
+     }
+   }
+   labels.push((day.getMonth() + 1) + "/" + day.getDate());
+   data.push(count);
+ }
+ el.studentTrendChart._chart = new Chart(el.studentTrendChart, {
+   type: "line",
+   data: {
+     labels: labels,
+     datasets: [{
+       label: "提问数",
+       data: data,
+       borderColor: "#185FA5", backgroundColor: "rgba(24,95,165,0.1)",
+       fill: true, tension: 0.35, pointRadius: 4
+     }]
+   },
+   options: { responsive: true, maintainAspectRatio: false,
+     scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+     plugins: { legend: { display: false } } }
+ });
+}
+
+var classReportChart = null;
+function renderClassReport() {
+  var activeBtn = el.classTimeFilter.querySelector(".dash-time-btn.active");
+  var range = activeBtn ? activeBtn.dataset.range : "week";
+  var records = range === "all" ? (state.records || []) : filterByTime(state.records || [], range);
+
+  // 统计卡
+  var stMap = {}, daySet = {}, activeStu = {};
+  for (var i = 0; i < records.length; i++) {
+    var r = records[i];
+    if (r.student_id) { stMap[r.student_id] = true; activeStu[r.student_id] = (activeStu[r.student_id] || 0) + 1; }
+    if (r.time) daySet[new Date(r.time).toDateString()] = true;
+  }
+  var days = Math.max(Object.keys(daySet).length, 1);
+  var activeCount = 0;
+  for (var k in activeStu) if (activeStu[k] >= 3) activeCount++;
+  $("crStatStudents").textContent = Object.keys(stMap).length;
+  $("crStatTotal").textContent = records.length;
+  $("crStatAvg").textContent = (records.length / days).toFixed(1);
+  $("crStatActive").textContent = activeCount;
+
+  // 各章节覆盖知识点数
+  var heat = computeHeat(records);
+  var kgData = (typeof KNOWLEDGE_GRAPH !== "undefined" ? KNOWLEDGE_GRAPH : { chapters: [] });
+  var chapters = kgData.chapters || [];
+  var chLabels = [], chData = [], chColors = [], chTotal = [];
+  for (var ci = 0; ci < chapters.length; ci++) {
+    var ch = chapters[ci];
+    var pts = [];
+    for (var si = 0; si < (ch.sections || []).length; si++) {
+      for (var gi = 0; gi < (ch.sections[si].groups || []).length; gi++) {
+        for (var pi = 0; pi < (ch.sections[si].groups[gi].points || []).length; pi++) {
+          pts.push(ch.sections[si].groups[gi].points[pi].name);
+        }
+      }
     }
+    var covered = 0;
+    for (var q = 0; q < pts.length; q++) if (heat[pts[q]] > 0) covered++;
+    chLabels.push("第" + ch.id + "章 " + ch.name);
+    chData.push(covered);
+    chTotal.push(pts.length);
+    chColors.push(ch.color);
   }
 
-  // ==================== Start ====================
+  // 柱状图
+  if (classReportChart) { classReportChart.destroy(); classReportChart = null; }
+  if (window.Chart && el.classChapterBar) {
+    var ctx = el.classChapterBar.getContext("2d");
+    var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    var textColor = isDark ? "#cbd5e1" : "#475569";
+    var gridColor = isDark ? "rgba(255,255,255,.08)" : "rgba(0,0,0,.06)";
+    classReportChart = new Chart(ctx, {
+      type: "bar",
+      data: { labels: chLabels, datasets: [{ label: "已覆盖知识点", data: chData, backgroundColor: chColors, borderRadius: 4 }] },
+      options: {
+        indexAxis: "y", responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { afterLabel: function(ctx) { return "总计 " + chTotal[ctx.dataIndex] + " 个知识点"; } } }
+        },
+        scales: {
+          x: { beginAtZero: true, ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } },
+          y: { ticks: { color: textColor, font: { size: 12 } }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  // 学生参与度 TOP 10
+  var stArr = [];
+  var stMap2 = {};
+  for (var i2 = 0; i2 < records.length; i2++) {
+    var r2 = records[i2];
+    if (!r2.student_id) continue;
+    if (!stMap2[r2.student_id]) stMap2[r2.student_id] = { name: r2.student_name || "--", sid: r2.student_id, count: 0, points: {}, lastTime: r2.time || "" };
+    stMap2[r2.student_id].count++;
+    var m2 = matchQuestionToPoint(r2.question);
+    if (m2) stMap2[r2.student_id].points[m2.name] = true;
+    if (r2.time && r2.time > stMap2[r2.student_id].lastTime) stMap2[r2.student_id].lastTime = r2.time;
+  }
+  for (var kk in stMap2) {
+    stArr.push({ name: stMap2[kk].name, sid: stMap2[kk].sid, count: stMap2[kk].count, pointCount: Object.keys(stMap2[kk].points).length, lastTime: stMap2[kk].lastTime });
+  }
+  stArr.sort(function (a, b) { return b.count - a.count; });
+  var rankHtml = "";
+  if (stArr.length === 0) {
+    rankHtml = '<tr class="teacher-empty"><td colspan="6">暂无数据</td></tr>';
+  } else {
+    for (var ri = 0; ri < Math.min(stArr.length, 10); ri++) {
+      var x = stArr[ri];
+      var medal = ri === 0 ? "🥇 " : (ri === 1 ? "🥈 " : (ri === 2 ? "🥉 " : ""));
+      rankHtml += '<tr><td>' + (medal || (ri + 1)) + '</td><td>' + escapeHtml(x.name) + '</td><td>' + escapeHtml(x.sid) + '</td><td>' + x.count + '</td><td>' + x.pointCount + '</td><td>' + (x.lastTime ? formatDateTime(x.lastTime) : "--") + '</td></tr>';
+    }
+  }
+  $("crRankBody").innerHTML = rankHtml;
+
+  // 高频问题 TOP 5
+  var qCount = {};
+  for (var qi2 = 0; qi2 < records.length; qi2++) {
+    var q = (records[qi2].question || "").trim();
+    if (q) qCount[q] = (qCount[q] || 0) + 1;
+  }
+  var qArr = [];
+  for (var qk in qCount) qArr.push({ q: qk, count: qCount[qk] });
+  qArr.sort(function (a, b) { return b.count - a.count; });
+  var hotHtml = "";
+  if (qArr.length === 0) {
+    hotHtml = '<li style="color:#999">暂无数据</li>';
+  } else {
+    for (var hi = 0; hi < Math.min(qArr.length, 5); hi++) {
+      hotHtml += '<li><span class="q">' + escapeHtml(qArr[hi].q) + '</span><span class="t">' + qArr[hi].count + ' 次</span></li>';
+    }
+  }
+  $("crHotList").innerHTML = hotHtml;
+
+  // 教学建议
+  var sugHtml = "";
+  if (records.length === 0) {
+    sugHtml = '<strong>📌 暂无数据</strong>请先在「提问记录」中加载学生记录。';
+  } else {
+    // 找覆盖率最低和最高的章节
+    var minCh = null, maxCh = null;
+    for (var sci = 0; sci < chapters.length; sci++) {
+      var pct = chTotal[sci] ? Math.round(chData[sci] / chTotal[sci] * 100) : 0;
+      if (!minCh || pct < minCh.pct) minCh = { name: chLabels[sci], pct: pct };
+      if (!maxCh || pct > maxCh.pct) maxCh = { name: chLabels[sci], pct: pct };
+    }
+    sugHtml = '<strong>📌 重点关注：</strong>"' + (minCh ? minCh.name : "") + '"覆盖率仅 ' + (minCh ? minCh.pct : 0) + '%，建议加强教学。<br>';
+    sugHtml += '<strong>📌 表现优秀：</strong>"' + (maxCh ? maxCh.name : "") + '"覆盖率达 ' + (maxCh ? maxCh.pct : 0) + '%。<br>';
+    sugHtml += '<strong>📌 参与度：</strong>' + activeCount + ' 名学生提问≥3次，共 ' + Object.keys(stMap).length + ' 人参与。';
+  }
+  $("crSuggestion").innerHTML = sugHtml;
+}
+
+// ==================== Start ====================
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })();
