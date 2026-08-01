@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>整体 DEMO · 计算机辅助设计AI教学助手</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
+<style>
+/* ============ Variables (完整复刻主项目) ============ */
+:root {
+  --primary:#185FA5; --primary-hover:#0C447C; --primary-light:#E6F1FB;
+  --primary-gradient:linear-gradient(135deg,#185FA5,#378ADD);
+  --accent:#378ADD; --danger:#E24B4A; --warning:#D97706; --success:#2EA064;
+  --bg:#F0F2F5; --surface:#FFFFFF; --surface-2:#F8FAFC; --surface-3:#F1F5F9;
+  --text:#1e293b; --text-2:#475569; --text-3:#94a3b8;
+  --border:#E2E8F0; --border-light:#F1F5F9; --code-bg:#F1F5F9;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 6px -1px rgba(0,0,0,.08),0 2px 4px -1px rgba(0,0,0,.04);
+  --shadow-lg:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);
+  --radius:12px; --radius-sm:8px; --radius-lg:16px; --radius-full:9999px;
+  --topbar-h:56px; --sidebar-w:220px; --max-w:860px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --font-mono:"SF Mono","Fira Code",Consolas,"Cascadia Code",monospace;
+}
+[data-theme="dark"] {
+  --primary:#378ADD; --primary-light:#042C53; --danger:#F09595;
+  --bg:#0f172a; --surface:#1e293b; --surface-2:#334155; --surface-3:#334155;
+  --text:#f1f5f9; --text-2:#cbd5e1; --text-3:#64748b;
+  --border:#334155; --border-light:#1e293b; --code-bg:#0d1117;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;overflow:hidden;height:100vh}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-track{background:transparent}
+kbd{background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:11px;font-family:var(--font-mono)}
+
+/* ============ Buttons & Inputs ============ */
+.btn{padding:8px 16px;border-radius:var(--radius-sm);border:1px solid transparent;cursor:pointer;font-size:14px;font-weight:500;transition:.15s;font-family:inherit;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-secondary{background:var(--surface);color:var(--text);border-color:var(--border)}
+.btn-secondary:hover{background:var(--surface-2)}
+.btn-block{width:100%;justify-content:center;padding:11px}
+.btn-sm{padding:5px 10px;font-size:13px}
+.icon-btn{background:transparent;border:none;cursor:pointer;color:var(--text-2);padding:6px;border-radius:var(--radius-sm);display:inline-flex;align-items:center;justify-content:center;transition:.15s}
+.icon-btn:hover{background:var(--surface-2);color:var(--text)}
+
+/* ============ Layout ============ */
+.view{height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.view.hidden{display:none}
+.topbar{height:var(--topbar-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0}
+.topbar-left,.topbar-right{display:flex;align-items:center;gap:8px}
+.topbar-title{font-size:15px;font-weight:600;color:var(--text)}
+.topbar-user{font-size:13px;color:var(--text-3);padding:4px 10px;background:var(--surface-2);border-radius:var(--radius-full)}
+.topbar-logo{color:var(--primary);display:flex;align-items:center}
+
+/* ============ Login View ============ */
+.view-login{justify-content:center;align-items:center;background:linear-gradient(135deg,#185FA5 0%,#378ADD 100%);padding:20px}
+.login-card{background:var(--surface);border-radius:var(--radius-lg);padding:36px 32px;width:100%;max-width:380px;box-shadow:var(--shadow-lg);text-align:center}
+.login-logo{width:56px;height:56px;background:var(--primary-light);color:var(--primary);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.login-title{font-size:20px;font-weight:600;margin-bottom:6px}
+.login-subtitle{font-size:13px;color:var(--text-3);margin-bottom:24px}
+.login-form{display:flex;flex-direction:column;gap:14px;text-align:left}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:13px;color:var(--text-2);font-weight:500}
+.form-group label .label-optional{color:var(--text-3);font-weight:400;font-size:12px}
+.form-group input{padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;background:var(--surface);color:var(--text);font-family:inherit;transition:.15s}
+.form-group input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(24,95,165,.12)}
+.login-teacher-link{font-size:12px;color:var(--text-3);margin-top:14px;cursor:pointer;transition:.15s;display:inline-block}
+.login-teacher-link:hover{color:var(--primary)}
+.login-error{color:var(--danger);font-size:12px;margin-top:10px;min-height:14px}
+
+/* ============ Chat View ============ */
+.chat-layout{flex:1;display:flex;overflow:hidden}
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px 12px;overflow-y:auto;flex-shrink:0;transition:.2s}
+.sidebar.collapsed{margin-left:calc(-1 * var(--sidebar-w))}
+.sidebar-section{margin-bottom:8px}
+.sidebar-label{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;padding:0 6px 6px;font-weight:600}
+.sidebar-card{padding:8px 10px;background:var(--surface-2);border-radius:var(--radius-sm);margin-bottom:6px}
+.sidebar-card-name{font-size:13px;font-weight:600;color:var(--text)}
+.sidebar-card-sub{font-size:11px;color:var(--text-3);margin-top:2px}
+.sidebar-divider{height:1px;background:var(--border-light);margin:10px 0}
+.sidebar-actions{display:flex;flex-direction:column;gap:3px}
+.sidebar-btn{display:flex;align-items:center;gap:9px;padding:8px 10px;background:transparent;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;color:var(--text-2);font-family:inherit;text-align:left;transition:.15s;width:100%}
+.sidebar-btn:hover{background:var(--surface-2);color:var(--text)}
+.sidebar-spacer{flex:1}
+
+.chat-main{flex:1;display:flex;flex-direction:column;background:var(--bg);min-width:0;overflow:hidden}
+.messages{flex:1;overflow-y:auto;padding:20px 16px;display:flex;flex-direction:column}
+.messages-inner{max-width:var(--max-w);width:100%;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.welcome-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px}
+.welcome-icon{width:64px;height:64px;background:var(--primary-light);color:var(--primary);border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.welcome-screen h2{font-size:18px;font-weight:600;margin-bottom:6px}
+.welcome-screen>p{font-size:13px;color:var(--text-3);margin-bottom:24px}
+.suggestions{display:grid;grid-template-columns:1fr;gap:10px;max-width:520px;width:100%}
+.suggestion-card{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:13px;text-align:left;font-family:inherit;color:var(--text);transition:.15s}
+.suggestion-card:hover{border-color:var(--primary);box-shadow:var(--shadow)}
+.suggestion-icon{color:var(--primary);display:flex;flex-shrink:0}
+
+.message{display:flex;gap:10px;align-items:flex-start;animation:fadeIn .2s ease}
+.message.user{flex-direction:row-reverse}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.message-avatar{width:34px;height:34px;border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:2px;font-weight:600;overflow:hidden}
+.message.user .message-avatar{background:var(--primary-gradient);color:#fff}
+/* ★ 改动1：AI 头像 → 机器人 SVG 图标 */
+.message.assistant .message-avatar{background:var(--primary-light);border:1px solid var(--border);padding:0;color:var(--primary)}
+.message.assistant .message-avatar svg{width:22px;height:22px}
+.message-content{max-width:78%;display:flex;flex-direction:column;gap:4px;min-width:0}
+.message.user .message-content{align-items:flex-end}
+.message-bubble{padding:10px 14px;border-radius:var(--radius);font-size:14.5px;line-height:1.65;word-break:break-word}
+.message.user .message-bubble{background:var(--primary);color:#fff;border-bottom-right-radius:4px}
+.message.assistant .message-bubble{background:var(--surface);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px}
+.message-bubble p{margin-bottom:6px}
+.message-bubble p:last-child{margin-bottom:0}
+.message-bubble strong{color:var(--primary);font-weight:600}
+.message-bubble code{background:var(--code-bg);padding:1px 5px;border-radius:4px;font-family:var(--font-mono);font-size:13px;color:var(--accent)}
+.message-bubble ul,.message-bubble ol{margin:6px 0 6px 18px}
+.message-bubble li{margin-bottom:2px}
+.message-bubble h1,.message-bubble h2,.message-bubble h3{margin:8px 0 6px;font-size:15px}
+.message-meta{font-size:11px;color:var(--text-3);padding:0 2px;display:flex;gap:8px;align-items:center}
+.message.user .message-meta{flex-direction:row-reverse}
+.message-actions{display:flex;gap:4px}
+.action-btn{background:transparent;border:none;cursor:pointer;color:var(--text-3);font-size:11px;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:3px;transition:.15s}
+.action-btn:hover{background:var(--surface-2);color:var(--text)}
+
+/* 三段式回答卡片：蓝色/橙色/绿色 */
+.answer-section{margin:8px 0;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.answer-section:first-child{margin-top:0}
+.answer-section:last-child{margin-bottom:0}
+.section-header{padding:7px 12px;font-weight:600;font-size:13.5px;display:flex;align-items:center;gap:6px}
+.section-body{padding:8px 12px;font-size:14px;line-height:1.6}
+.section-body p:first-child{margin-top:0}
+.section-body p:last-child{margin-bottom:0}
+.section-operation .section-header{background:rgba(24,95,165,0.08);color:var(--primary)}
+.section-tips .section-header{background:rgba(217,119,6,0.1);color:#b45309}
+.section-sizheng .section-header{background:rgba(22,163,74,0.08);color:#15803d}
+.section-operation{border-color:rgba(24,95,165,0.2)}
+.section-tips{border-color:rgba(217,119,6,0.2)}
+.section-sizheng{border-color:rgba(22,163,74,0.2)}
+.action-btn svg{width:11px;height:11px}
+
+.input-area{background:var(--surface);border-top:1px solid var(--border);padding:12px 16px;flex-shrink:0}
+.input-wrapper{max-width:var(--max-w);margin:0 auto;display:flex;gap:8px;align-items:flex-end;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:6px 6px 6px 14px;transition:.15s}
+.input-wrapper:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px rgba(24,95,165,.08)}
+.message-input{flex:1;border:none;background:transparent;resize:none;font-family:inherit;font-size:14.5px;color:var(--text);outline:none;max-height:120px;line-height:1.5;padding:6px 0}
+.send-btn{width:36px;height:36px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s}
+.send-btn:hover{background:var(--primary-hover)}
+.send-btn:disabled{opacity:.5;cursor:not-allowed}
+.input-hint{max-width:var(--max-w);margin:6px auto 0;font-size:11px;color:var(--text-3);display:flex;justify-content:space-between}
+
+/* ============ Teacher View ============ */
+.teacher-body{flex:1;overflow-y:auto;padding:16px 20px;background:var(--bg)}
+.teacher-tabs{display:flex;gap:4px;background:var(--surface);border-radius:var(--radius);padding:5px;margin-bottom:16px;max-width:var(--max-w);box-shadow:var(--shadow-sm);overflow-x:auto}
+.teacher-tab{background:transparent;border:none;padding:8px 18px;border-radius:var(--radius-sm);cursor:pointer;font-size:14px;color:var(--text-2);font-family:inherit;white-space:nowrap;transition:.15s}
+.teacher-tab.active{background:var(--primary);color:#fff}
+.teacher-panel{max-width:var(--max-w);margin:0 auto;display:none}
+.teacher-panel.active{display:block}
+.teacher-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.stat-card{background:var(--surface);border-radius:var(--radius);padding:16px;text-align:center;box-shadow:var(--shadow-sm)}
+.stat-num{font-size:26px;font-weight:700;color:var(--primary);line-height:1.1}
+.stat-num.danger{color:var(--danger)}
+.stat-num.warning{color:var(--warning)}
+.stat-label{font-size:12px;color:var(--text-3);margin-top:4px}
+.teacher-toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.teacher-search,.teacher-filter{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:13px;font-family:inherit;outline:none}
+.teacher-search{flex:1;min-width:180px}
+.teacher-table-wrap{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow-x:auto}
+.teacher-table{width:100%;border-collapse:collapse;font-size:13px}
+.teacher-table th{text-align:left;padding:11px 12px;background:var(--surface-2);color:var(--text-2);font-weight:600;border-bottom:1px solid var(--border);font-size:12px}
+.teacher-table td{padding:11px 12px;border-bottom:1px solid var(--border-light);color:var(--text)}
+.teacher-table tr:last-child td{border-bottom:none}
+.teacher-table tr:hover td{background:var(--surface-2)}
+.teacher-table .q-content{max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.teacher-empty{color:var(--text-3);text-align:center;padding:32px 12px !important}
+
+/* ============ Knowledge Graph ============ */
+.kg-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.kg-search-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.kg-search-input{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:13px;font-family:inherit;outline:none;flex:1;min-width:160px}
+.kg-level-filter{display:flex;gap:3px;background:var(--surface-2);padding:3px;border-radius:var(--radius-sm)}
+.kg-level-btn{background:transparent;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:12px;color:var(--text-2);font-family:inherit;transition:.15s}
+.kg-level-btn.active{background:var(--surface);color:var(--primary);box-shadow:var(--shadow-sm)}
+.kg-chapter{background:var(--surface);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
+.kg-chapter-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;cursor:pointer}
+.kg-chapter-title{font-size:14px;font-weight:600;color:var(--text)}
+.kg-chapter-toggle{color:var(--text-3);font-size:16px;transition:.2s}
+.kg-chapter.collapsed .kg-chapter-toggle{transform:rotate(-90deg)}
+.kg-points{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.kg-point{padding:8px 10px;background:var(--surface-2);border-radius:var(--radius-sm);font-size:12.5px;border-left:3px solid var(--text-3);transition:.15s;cursor:default}
+.kg-point:hover{background:var(--primary-light)}
+.kg-point.core{border-left-color:#A32D2D}
+.kg-point.key{border-left-color:#854F0B}
+.kg-point.normal{border-left-color:#185FA5}
+.kg-point.know{border-left-color:#5F5E5A}
+.kg-point.optional{border-left-color:#888780}
+.kg-point-name{font-weight:500;color:var(--text)}
+.kg-point-meta{display:flex;gap:6px;margin-top:4px;font-size:11px;color:var(--text-3);align-items:center}
+.kg-tag{padding:1px 6px;border-radius:var(--radius-full);font-size:10px;background:var(--surface);color:var(--text-3)}
+.kg-tag.core{background:#FEE;color:#A32D2D}
+.kg-tag.key{background:#FFF3E0;color:#854F0B}
+.kg-tag.normal{background:var(--primary-light);color:var(--primary)}
+.kg-tag.know{background:#F0F0F0;color:#5F5E5A}
+.kg-tag.optional{background:#F5F5F5;color:#888780}
+.kg-tag.covered{background:#E6F7FF;color:#096DD9}
+
+/* ============ Dashboard ============ */
+.dash-time-filter{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:var(--radius-sm);margin-bottom:14px;width:fit-content}
+.dash-time-btn{background:transparent;border:none;padding:6px 14px;border-radius:5px;cursor:pointer;font-size:13px;color:var(--text-2);font-family:inherit;transition:.15s}
+.dash-time-btn.active{background:var(--surface);color:var(--primary);box-shadow:var(--shadow-sm)}
+.dash-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.dash-charts{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:16px}
+.dash-chart-card{background:var(--surface);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm)}
+.dash-chart-title{font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:10px}
+.dash-chart-box{height:280px;position:relative}
+.dash-chart-doughnut{height:280px;display:flex;align-items:center;gap:14px}
+.dash-legend{flex:1;font-size:12px;display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto}
+.dash-legend-item{display:flex;align-items:center;gap:6px;color:var(--text-2)}
+.dash-legend-color{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.dash-rank-card{background:var(--surface);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm)}
+.dash-rank-table{width:100%;border-collapse:collapse;font-size:13px}
+.dash-rank-table th{text-align:left;padding:8px 10px;background:var(--surface-2);color:var(--text-2);font-weight:600;font-size:12px;border-bottom:1px solid var(--border)}
+.dash-rank-table td{padding:9px 10px;border-bottom:1px solid var(--border-light);color:var(--text)}
+.dash-rank-table .rank-medal{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;color:#fff;font-weight:700;font-size:12px}
+.dash-rank-table .rank-gold{background:linear-gradient(135deg,#FFD700,#FFA500)}
+.dash-rank-table .rank-silver{background:linear-gradient(135deg,#C0C0C0,#909090)}
+.dash-rank-table .rank-bronze{background:linear-gradient(135deg,#CD7F32,#A65A2A)}
+
+/* ============ Class Report (新增) ============ */
+.report-banner{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--primary-light);border-left:3px solid var(--primary);border-radius:6px;margin-bottom:14px;font-size:13px;color:var(--primary)}
+.report-section{margin-bottom:22px}
+.report-section h3{font-size:14px;font-weight:600;color:var(--text);margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:8px}
+.report-section h3 .num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--primary);color:#fff;font-size:12px}
+.progress-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.progress-row .name{flex:0 0 140px;font-size:13px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.progress-row .bar{flex:1;height:16px;background:var(--surface-2);border-radius:8px;overflow:hidden}
+.progress-row .bar-fill{height:100%;background:linear-gradient(90deg,#185FA5,#5B9BD5);border-radius:8px;transition:width .6s}
+.progress-row .bar-fill.core{background:linear-gradient(90deg,#A32D2D,#E16C6C)}
+.progress-row .bar-fill.key{background:linear-gradient(90deg,#854F0B,#D99858)}
+.progress-row .pct{flex:0 0 44px;text-align:right;font-size:12px;color:var(--text-3);font-weight:600}
+.recent-list{list-style:none;padding:0;margin:0;background:var(--surface);border-radius:var(--radius);padding:10px 14px;box-shadow:var(--shadow-sm)}
+.recent-list li{display:flex;gap:10px;padding:9px 0;border-bottom:1px dashed var(--border-light);font-size:13px;align-items:center}
+.recent-list li:last-child{border-bottom:none}
+.recent-list .q{flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recent-list .t{color:var(--text-3);font-size:12px}
+.recent-list .count{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:22px;background:var(--primary);color:#fff;font-size:11px;border-radius:11px;padding:0 8px;font-weight:600}
+.suggestion-box{padding:14px 16px;background:linear-gradient(135deg,#FFF8E1,#FFFBE6);border:1px solid #FFE58F;border-radius:var(--radius);font-size:13px;line-height:1.7;color:#874D00}
+.suggestion-box strong{color:#AD6800}
+
+/* ============ Hot-point (预警) ============ */
+.hot5-label{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:12px}
+.hot5-red{background:#FEE2E2;color:var(--danger)}
+.hot5-red .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--danger);animation:pulse 1.5s infinite}
+.hot5-none{background:var(--surface-2);color:var(--text-3)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ============ Demo Modal ============ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;animation:fadeIn .15s}
+.modal-overlay.hidden{display:none}
+.modal{background:var(--surface);border-radius:var(--radius-lg);max-width:480px;width:100%;box-shadow:var(--shadow-lg);animation:slideUp .2s ease}
+.modal-sm{max-width:380px}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.modal-header h2{font-size:16px;font-weight:600}
+.modal-body{padding:18px}
+.modal-footer{padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+
+/* ============ Toast ============ */
+.toast{position:fixed;top:24px;left:50%;transform:translateX(-50%);background:var(--surface);color:var(--text);padding:9px 18px;border-radius:var(--radius);box-shadow:var(--shadow-lg);font-size:13.5px;z-index:2000;animation:slideDown .2s ease;border-left:3px solid var(--primary)}
+.toast.success{border-left-color:var(--success)}
+.toast.error{border-left-color:var(--danger)}
+@keyframes slideDown{from{opacity:0;transform:translate(-50%,-12px)}to{opacity:1;transform:translate(-50%,0)}}
+
+/* ============ Responsive ============ */
+@media (max-width:768px){
+  .sidebar{position:absolute;left:0;top:var(--topbar-h);bottom:0;z-index:50;box-shadow:var(--shadow-lg)}
+  .sidebar.collapsed{margin-left:calc(-1 * var(--sidebar-w))}
+  .teacher-stats,.kg-stats,.dash-stats{grid-template-columns:repeat(2,1fr)}
+  .dash-charts{grid-template-columns:1fr}
+  .topbar-user{display:none}
+}
+
+/* ============ Print (PDF Export) ============ */
+@media print {
+  .no-print{display:none !important}
+  body{overflow:visible;height:auto;background:#fff}
+  .view{height:auto;display:block}
+  .view.hidden{display:block}
+  .topbar{border-bottom:2px solid #185FA5}
+  .teacher-body{overflow:visible;padding:0}
+  .teacher-tabs{display:none}
+  .teacher-panel{display:block !important}
+  .modal-overlay{display:none !important}
+  .sidebar,.input-area,.messages{display:none}
+  .chat-main{overflow:visible}
+  .chat-layout{overflow:visible}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ============== 1. 登录视图 ============== -->
+<div id="loginView" class="view view-login">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      </svg>
+    </div>
+    <h1 class="login-title">计算机辅助设计AI教学助手</h1>
+    <p class="login-subtitle">请输入信息登录，开始你的学习之旅</p>
+    <div class="login-form">
+      <div class="form-group">
+        <label for="loginName">姓名</label>
+        <input type="text" id="loginName" placeholder="请输入姓名" autocomplete="off" value="张三">
+      </div>
+      <div class="form-group">
+        <label for="loginId">学号</label>
+        <input type="text" id="loginId" placeholder="请输入学号" autocomplete="off" value="2024001">
+      </div>
+      <div class="form-group">
+        <label for="loginCode">班级口令<span class="label-optional">（可选）</span></label>
+        <input type="password" id="loginCode" placeholder="教师设置的口令" autocomplete="off">
+      </div>
+      <button id="loginBtn" class="btn btn-primary btn-block">进入学习</button>
+    </div>
+    <div class="login-teacher-link" id="loginTeacherBtn">教师入口</div>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- ============== 2. 学生对话视图 ============== -->
+<div id="chatView" class="view view-chat hidden">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button id="sidebarToggle" class="icon-btn" title="菜单" aria-label="菜单">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <h1 class="topbar-title">计算机辅助设计AI教学助手</h1>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbarUser">张三 · 2024001</span>
+      <button id="logoutBtn" class="icon-btn" title="退出登录" aria-label="退出登录">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="chat-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">学生信息</div>
+        <div class="sidebar-card">
+          <div class="sidebar-card-name" id="sidebarName">张三</div>
+          <div class="sidebar-card-sub" id="sidebarId">学号 2024001</div>
+        </div>
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">快捷功能</div>
+        <div class="sidebar-actions">
+          <button class="sidebar-btn" id="reportBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <span>学习报告</span>
+          </button>
+          <button class="sidebar-btn" id="kgBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/><line x1="6" y1="7" x2="10" y2="11"/><line x1="18" y1="7" x2="14" y2="11"/><line x1="6" y1="17" x2="10" y2="13"/><line x1="18" y1="17" x2="14" y2="13"/></svg>
+            <span>知识图谱</span>
+          </button>
+          <button class="sidebar-btn" id="helpBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+            <span>设计帮助文档</span>
+          </button>
+          <button class="sidebar-btn" id="exampleBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>提问示例</span>
+          </button>
+        </div>
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">对话</div>
+        <div class="sidebar-actions">
+          <button class="sidebar-btn" id="clearBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span>清空对话</span>
+          </button>
+        </div>
+      </div>
+      <div class="sidebar-spacer"></div>
+    </aside>
+
+    <main class="chat-main">
+      <div class="messages" id="messages">
+        <div class="welcome-screen" id="welcomeScreen">
+          <div class="welcome-icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <h2 id="welcomeTitle">你好！我是 计算机辅助设计AI教学助手</h2>
+          <p id="welcomeSubtitle">可以问我任何关于计算机辅助设计操作的问题</p>
+          <div class="suggestions" id="suggestions">
+            <button class="suggestion-card" data-text="如何创建拉伸凸台特征？"><span class="suggestion-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="12" x2="20" y2="12"/></svg></span><span>如何创建拉伸凸台特征？</span></button>
+            <button class="suggestion-card" data-text="装配体中如何添加配合关系？"><span class="suggestion-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><line x1="9" y1="6" x2="18" y2="6"/><line x1="6" y1="9" x2="6" y2="18"/><line x1="15" y1="18" x2="18" y2="15"/></svg></span><span>装配体中如何添加配合关系？</span></button>
+            <button class="suggestion-card" data-text="工程图怎么生成剖面视图？"><span class="suggestion-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg></span><span>工程图怎么生成剖面视图？</span></button>
+          </div>
+        </div>
+        <div class="messages-inner" id="messagesInner"></div>
+      </div>
+      <footer class="input-area">
+        <div class="input-wrapper">
+          <textarea id="messageInput" class="message-input" placeholder="输入你的问题..." rows="1"></textarea>
+          <button id="sendBtn" class="send-btn" title="发送" aria-label="发送">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+        <div class="input-hint">
+          <span>按 <kbd>Enter</kbd> 发送，<kbd>Shift</kbd>+<kbd>Enter</kbd> 换行</span>
+          <span class="char-count" id="charCount">0 / 2000</span>
+        </div>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<!-- ============== 3. 教师后台视图 ============== -->
+<div id="teacherView" class="view view-teacher hidden">
+  <header class="topbar no-print">
+    <div class="topbar-left">
+      <button id="teacherBackBtn" class="icon-btn" title="返回" aria-label="返回">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <h1 class="topbar-title">学生提问记录</h1>
+    </div>
+    <div class="topbar-right">
+      <button id="teacherRefreshBtn" class="icon-btn" title="刷新" aria-label="刷新">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="teacher-body">
+    <nav class="teacher-tabs no-print">
+      <button class="teacher-tab active" data-tab="records">提问记录</button>
+      <button class="teacher-tab" data-tab="kg">知识图谱</button>
+      <button class="teacher-tab" data-tab="dashboard">评价看板</button>
+      <button class="teacher-tab" data-tab="classReport">班级报告</button>
+    </nav>
+
+    <!-- ===== 3.1 提问记录 ===== -->
+    <div class="teacher-panel active" id="teacherPanelRecords">
+      <div class="teacher-stats" id="teacherStats">
+        <div class="stat-card"><div class="stat-num" id="statStudents">28</div><div class="stat-label">参与学生</div></div>
+        <div class="stat-card"><div class="stat-num" id="statTotal">156</div><div class="stat-label">提问总数</div></div>
+        <div class="stat-card"><div class="stat-num" id="statToday">23</div><div class="stat-label">今日提问</div></div>
+      </div>
+      <div class="teacher-toolbar">
+        <input type="text" id="teacherSearch" class="teacher-search" placeholder="搜索学生姓名或问题...">
+        <select id="teacherFilter" class="teacher-filter"><option value="">全部类型</option><option value="对话">对话</option></select>
+        <button id="teacherExportBtn" class="btn btn-secondary btn-sm">导出 CSV</button>
+      </div>
+      <div class="teacher-table-wrap">
+        <table class="teacher-table" id="teacherTable">
+          <thead><tr><th style="width:80px">时间</th><th style="width:70px">学生</th><th style="width:80px">学号</th><th>问题内容</th><th style="width:60px">类型</th></tr></thead>
+          <tbody id="teacherTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== 3.2 知识图谱 ===== -->
+    <div class="teacher-panel" id="teacherPanelKg">
+      <div class="kg-stats" id="kgStats">
+        <div class="stat-card"><div class="stat-num" id="kgStatTotal">65</div><div class="stat-label">总知识点</div></div>
+        <div class="stat-card"><div class="stat-num" id="kgStatCovered">42</div><div class="stat-label">已覆盖数</div></div>
+        <div class="stat-card"><div class="stat-num" id="kgStatRate">64.6%</div><div class="stat-label">覆盖率</div></div>
+        <div class="stat-card"><div class="stat-num" id="kgStatCore">14</div><div class="stat-label">核心知识点</div></div>
+      </div>
+      <div class="kg-search-row">
+        <input type="text" id="kgSearchInputT" class="kg-search-input" placeholder="搜索知识点名称...">
+        <div class="kg-level-filter" id="kgLevelFilterT">
+          <button class="kg-level-btn active" data-level="all">全部</button>
+          <button class="kg-level-btn" data-level="core">核心</button>
+          <button class="kg-level-btn" data-level="key">重点</button>
+          <button class="kg-level-btn" data-level="normal">一般</button>
+          <button class="kg-level-btn" data-level="know">了解</button>
+          <button class="kg-level-btn" data-level="optional">选学</button>
+        </div>
+        <div class="kg-level-filter" id="kgCoverFilterT">
+          <button class="kg-level-btn active" data-cover="all">全部</button>
+          <button class="kg-level-btn" data-cover="covered">已覆盖</button>
+          <button class="kg-level-btn" data-cover="uncovered">未覆盖</button>
+        </div>
+      </div>
+      <div class="kg-chapters" id="kgChaptersT"></div>
+    </div>
+
+    <!-- ===== 3.3 评价看板 ===== -->
+    <div class="teacher-panel" id="teacherPanelDashboard">
+      <div class="dash-time-filter no-print" id="dashTimeFilter">
+        <button class="dash-time-btn active" data-range="week">本周</button>
+        <button class="dash-time-btn" data-range="month">本月</button>
+        <button class="dash-time-btn" data-range="year">本年</button>
+      </div>
+      <div class="dash-stats" id="dashStats">
+        <div class="stat-card"><div class="stat-num" id="dashStatStudents">28</div><div class="stat-label">参与学生</div></div>
+        <div class="stat-card"><div class="stat-num" id="dashStatTotal">87</div><div class="stat-label">提问总数</div></div>
+        <div class="stat-card"><div class="stat-num" id="dashStatAvg">12.4</div><div class="stat-label">日均提问</div></div>
+        <div class="stat-card"><div class="stat-num" id="dashStatActive">19</div><div class="stat-label">活跃学生(≥3次)</div></div>
+      </div>
+      <div class="dash-charts">
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">知识点频次 TOP 15</div>
+          <div class="dash-chart-box" id="dashBarBox"></div>
+        </div>
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">章节提问占比</div>
+          <div class="dash-chart-box dash-chart-doughnut" id="dashDoughnutBox">
+            <div style="width:140px;height:140px;border-radius:50%;background:conic-gradient(#185FA5 0% 35%,#378ADD 35% 60%,#A32D2D 60% 78%,#854F0B 78% 90%,#5F5E5A 90% 100%);position:relative">
+              <div style="position:absolute;inset:18px;background:var(--surface);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column">
+                <div style="font-size:18px;font-weight:700;color:var(--primary)">87</div>
+                <div style="font-size:10px;color:var(--text-3)">总提问</div>
+              </div>
+            </div>
+            <div class="dash-legend" id="dashDoughnutLegend">
+              <div class="dash-legend-item"><div class="dash-legend-color" style="background:#185FA5"></div><span>拉伸特征 (30, 35%)</span></div>
+              <div class="dash-legend-item"><div class="dash-legend-color" style="background:#378ADD"></div><span>装配基础 (22, 25%)</span></div>
+              <div class="dash-legend-item"><div class="dash-legend-color" style="background:#A32D2D"></div><span>工程图 (16, 18%)</span></div>
+              <div class="dash-legend-item"><div class="dash-legend-color" style="background:#854F0B"></div><span>钣金设计 (10, 12%)</span></div>
+              <div class="dash-legend-item"><div class="dash-legend-color" style="background:#5F5E5A"></div><span>其他 (9, 10%)</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dash-rank-card">
+        <div class="dash-chart-title">人员参与度排名</div>
+        <table class="dash-rank-table">
+          <thead><tr><th style="width:60px">排名</th><th>姓名</th><th>学号</th><th>提问数</th><th>涉及知识点</th><th>最近提问</th></tr></thead>
+          <tbody id="dashRankBody">
+            <tr><td><span class="rank-medal rank-gold">1</span></td><td>李四</td><td>2024002</td><td>23</td><td>12</td><td>今天 14:32</td></tr>
+            <tr><td><span class="rank-medal rank-silver">2</span></td><td>王五</td><td>2024003</td><td>19</td><td>10</td><td>今天 13:18</td></tr>
+            <tr><td><span class="rank-medal rank-bronze">3</span></td><td>赵六</td><td>2024004</td><td>16</td><td>9</td><td>今天 11:45</td></tr>
+            <tr><td>4</td><td>钱七</td><td>2024005</td><td>14</td><td>8</td><td>昨天 16:20</td></tr>
+            <tr><td>5</td><td>孙八</td><td>2024006</td><td>12</td><td>7</td><td>昨天 15:08</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== 3.4 班级报告（新增） ===== -->
+    <div class="teacher-panel" id="teacherPanelClassReport">
+      <div class="report-banner no-print">
+        <span>📊 班级报告 · 实时统计 + 教学建议 · 一键导出 PDF</span>
+        <!-- ★ 改动2：班级报告 — 只保留「导出 PDF」按钮 -->
+        <button style="margin-left:auto" class="btn btn-primary btn-sm" id="classExportPdfBtn" onclick="exportPDF('classReport')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          导出 PDF
+        </button>
+      </div>
+      <div class="dash-time-filter no-print" id="classTimeFilter">
+        <button class="dash-time-btn active" data-range="week">本周</button>
+        <button class="dash-time-btn" data-range="month">本月</button>
+        <button class="dash-time-btn" data-range="all">全部</button>
+      </div>
+      <div class="dash-stats">
+        <div class="stat-card"><div class="stat-num">28</div><div class="stat-label">参与学生</div></div>
+        <div class="stat-card"><div class="stat-num">87</div><div class="stat-label">提问总数</div></div>
+        <div class="stat-card"><div class="stat-num">12.4</div><div class="stat-label">日均提问</div></div>
+        <div class="stat-card"><div class="stat-num">19</div><div class="stat-label">活跃学生(≥3次)</div></div>
+      </div>
+
+      <div class="report-section">
+        <h3><span class="num">1</span>全班各章节提问覆盖率</h3>
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">各章覆盖知识点数</div>
+          <div class="dash-chart-box" id="classChapterBar"></div>
+        </div>
+      </div>
+
+      <div class="report-section">
+        <h3><span class="num">2</span>学生参与度 TOP 10</h3>
+        <div class="teacher-table-wrap">
+          <table class="teacher-table">
+            <thead><tr><th style="width:60px">排名</th><th>姓名</th><th>学号</th><th>提问数</th><th>涉及知识点</th><th>最近提问</th></tr></thead>
+            <tbody>
+              <tr><td><span class="rank-medal rank-gold">1</span></td><td>李四</td><td>2024002</td><td>23</td><td>12</td><td>今天 14:32</td></tr>
+              <tr><td><span class="rank-medal rank-silver">2</span></td><td>王五</td><td>2024003</td><td>19</td><td>10</td><td>今天 13:18</td></tr>
+              <tr><td><span class="rank-medal rank-bronze">3</span></td><td>赵六</td><td>2024004</td><td>16</td><td>9</td><td>今天 11:45</td></tr>
+              <tr><td>4</td><td>钱七</td><td>2024005</td><td>14</td><td>8</td><td>昨天 16:20</td></tr>
+              <tr><td>5</td><td>孙八</td><td>2024006</td><td>12</td><td>7</td><td>昨天 15:08</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="report-section">
+        <h3><span class="num">3</span>高频问题 TOP 5</h3>
+        <ul class="recent-list">
+          <li><span class="count">8</span><span class="q">如何创建拉伸凸台特征？</span><span class="t">涉及 5 人</span></li>
+          <li><span class="count">7</span><span class="q">装配体中如何添加配合关系？</span><span class="t">涉及 4 人</span></li>
+          <li><span class="count">6</span><span class="q">工程图怎么生成剖面视图？</span><span class="t">涉及 4 人</span></li>
+          <li><span class="count">5</span><span class="q">钣金折弯系数如何设置？</span><span class="t">涉及 3 人</span></li>
+          <li><span class="count">5</span><span class="q">如何导出 STL 文件用于 3D 打印？</span><span class="t">涉及 3 人</span></li>
+        </ul>
+      </div>
+
+      <div class="report-section">
+        <h3><span class="num">4</span>教学建议</h3>
+        <div class="suggestion-box">
+          <strong>📌 重点关注：</strong>本周 <strong>5 名学生</strong>提问次数 ≥ 5 次，建议教师关注其学习状态并适当面谈指导。<br>
+          <strong>📌 章节覆盖：</strong>「工程图」章节提问覆盖偏低，仅 16 次，建议下次课重点讲解并增加随堂练习。<br>
+          <strong>📌 高频问题：</strong>「拉伸凸台」连续 3 周位列第 1，建议录制 5 分钟短视频纳入数字教材。
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== 弹窗：学生个人学习报告 ============== -->
+<div id="reportModal" class="modal-overlay hidden no-print">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <h2>📊 我的学习报告</h2>
+      <div style="display:flex;gap:6px;align-items:center">
+        <!-- ★ 改动3：学生个人报告 — 新增「导出 PDF」按钮 -->
+        <button class="btn btn-primary btn-sm" onclick="exportPDF('studentReport')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          导出 PDF
+        </button>
+        <button class="icon-btn" onclick="closeReportModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>
+    <div class="modal-body" style="max-height:65vh;overflow-y:auto" id="reportModalBody">
+      <div class="report-banner"><span>👤 张三 · 2024001 · 报告生成于 <span id="reportTime"></span></span></div>
+
+      <div class="teacher-stats" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat-card"><div class="stat-num">12</div><div class="stat-label">总提问</div></div>
+        <div class="stat-card"><div class="stat-num">8</div><div class="stat-label">已掌握知识点</div></div>
+        <div class="stat-card"><div class="stat-num">67%</div><div class="stat-label">个人覆盖率</div></div>
+        <div class="stat-card"><div class="stat-num">7天</div><div class="stat-label">学习天数</div></div>
+      </div>
+
+      <div class="report-section">
+        <h3><span class="num">1</span>章节学习进度</h3>
+        <div class="progress-row"><span class="name">拉伸特征</span><div class="bar"><div class="bar-fill" style="width:80%"></div></div><span class="pct">80%</span></div>
+        <div class="progress-row"><span class="name">装配基础</span><div class="bar"><div class="bar-fill" style="width:60%"></div></div><span class="pct">60%</span></div>
+        <div class="progress-row"><span class="name">工程图基础</span><div class="bar"><div class="bar-fill" style="width:50%"></div></div><span class="pct">50%</span></div>
+        <div class="progress-row"><span class="name">钣金设计</span><div class="bar"><div class="bar-fill" style="width:30%"></div></div><span class="pct">30%</span></div>
+        <div class="progress-row"><span class="name">曲面建模</span><div class="bar"><div class="bar-fill" style="width:20%"></div></div><span class="pct">20%</span></div>
+      </div>
+
+      <div class="report-section">
+        <h3><span class="num">2</span>近期提问 (最近 5 条)</h3>
+        <ul class="recent-list">
+          <li><span class="q">如何创建拉伸凸台特征？</span><span class="t">今天 14:32</span></li>
+          <li><span class="q">装配体中如何添加配合关系？</span><span class="t">今天 13:18</span></li>
+          <li><span class="q">工程图怎么生成剖面视图？</span><span class="t">昨天 16:45</span></li>
+          <li><span class="q">钣金折弯系数如何设置？</span><span class="t">昨天 10:20</span></li>
+          <li><span class="q">如何导出 STL 文件用于 3D 打印？</span><span class="t">3 天前</span></li>
+        </ul>
+      </div>
+
+      <div class="report-section">
+        <h3><span class="num">3</span>学习建议</h3>
+        <div class="suggestion-box">
+          <strong>💡 优势：</strong>你在「拉伸特征」章节学习扎实，进度 80%。<br>
+          <strong>📚 待加强：</strong>「钣金设计」和「曲面建模」覆盖较低，建议下节课重点关注。<br>
+          <strong>🚀 建议：</strong>可以尝试挑战「工程图高级标注」模块，提升综合能力。
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== 弹窗：知识图谱 ============== -->
+<div id="kgModal" class="modal-overlay hidden no-print">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-header">
+      <h2>知识图谱（65 个知识点）</h2>
+      <button class="icon-btn" onclick="closeKgModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" style="max-height:65vh;overflow-y:auto" id="kgModalBody">
+      <div class="kg-stats" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat-card"><div class="stat-num">65</div><div class="stat-label">总知识点</div></div>
+        <div class="stat-card"><div class="stat-num">8</div><div class="stat-label">我已问过</div></div>
+        <div class="stat-card"><div class="stat-num">12.3%</div><div class="stat-label">我的覆盖率</div></div>
+        <div class="stat-card"><div class="stat-num">12</div><div class="stat-label">我的提问数</div></div>
+      </div>
+      <div class="kg-search-row">
+        <input type="text" class="kg-search-input" placeholder="搜索知识点...">
+        <div class="kg-level-filter">
+          <button class="kg-level-btn active" data-level="all">全部</button>
+          <button class="kg-level-btn" data-level="core">核心</button>
+          <button class="kg-level-btn" data-level="key">重点</button>
+          <button class="kg-level-btn" data-level="normal">一般</button>
+        </div>
+      </div>
+      <div class="kg-chapters" id="kgChapters"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== 弹窗：提问示例 ============== -->
+<div id="exampleModal" class="modal-overlay hidden no-print">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <h2>提问示例</h2>
+      <button class="icon-btn" onclick="closeExampleModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="suggestion-card" onclick="askExample(this)"><span class="suggestion-icon">📐</span><span>如何创建拉伸凸台特征？</span></button>
+        <button class="suggestion-card" onclick="askExample(this)"><span class="suggestion-icon">🔧</span><span>装配体中如何添加配合关系？</span></button>
+        <button class="suggestion-card" onclick="askExample(this)"><span class="suggestion-icon">📏</span><span>工程图怎么生成剖面视图？</span></button>
+        <button class="suggestion-card" onclick="askExample(this)"><span class="suggestion-icon">🪑</span><span>钣金折弯系数如何设置？</span></button>
+        <button class="suggestion-card" onclick="askExample(this)"><span class="suggestion-icon">🖨️</span><span>如何导出 STL 文件用于 3D 打印？</span></button>
+        <button class="suggestion-card" onclick="askExample(this)"><span class="suggestion-icon">📊</span><span>如何做旋转切除特征？</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== 弹窗：教师密码 ============== -->
+<div id="teacherPwdModal" class="modal-overlay hidden no-print">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>教师验证</h2>
+      <button class="icon-btn" onclick="closeTeacherPwd()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="teacherPwdInput">请输入教师密码</label>
+        <input type="password" id="teacherPwdInput" placeholder="教师密码" autocomplete="off">
+      </div>
+      <div id="teacherPwdError" style="color:var(--danger);font-size:12px;margin-top:8px;min-height:14px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeTeacherPwd()">取消</button>
+      <button class="btn btn-primary" id="confirmTeacherPwd">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== Toast 容器 ============== -->
+<div id="toast"></div>
+
+</div>
+
+<script>
+/* ============================================================
+ * 完整工具 DEMO — 演示数据
+ * ============================================================ */
+
+// 学生/教师/对话/记录 演示数据
+var STATE = {
+  student: null,
+  messages: [],
+  isGenerating: false,
+  isTeacher: false,
+  records: [
+    {time:'14:32', name:'张三', id:'2024001', q:'如何创建拉伸凸台特征？', type:'对话'},
+    {time:'14:30', name:'李四', id:'2024002', q:'装配体中如何添加配合关系？', type:'对话'},
+    {time:'14:28', name:'王五', id:'2024003', q:'钣金折弯系数如何设置？', type:'对话'},
+    {time:'14:25', name:'赵六', id:'2024004', q:'工程图怎么生成剖面视图？', type:'对话'},
+    {time:'14:22', name:'钱七', id:'2024005', q:'如何导出 STL 文件用于 3D 打印？', type:'对话'},
+    {time:'14:20', name:'孙八', id:'2024006', q:'草图如何添加尺寸约束？', type:'对话'},
+    {time:'14:18', name:'周九', id:'2024007', q:'镜像特征怎么用？', type:'对话'},
+    {time:'14:15', name:'吴十', id:'2024008', q:'抽壳特征怎么用？', type:'对话'},
+    {time:'14:12', name:'张三', id:'2024001', q:'如何做旋转切除特征？', type:'对话'},
+    {time:'14:10', name:'李四', id:'2024002', q:'阵列特征如何使用？', type:'对话'},
+    {time:'14:08', name:'王五', id:'2024003', q:'装配体中如何做干涉检查？', type:'对话'},
+    {time:'14:05', name:'赵六', id:'2024004', q:'工程图怎么标注尺寸？', type:'对话'},
+  ],
+};
+
+// 知识图谱示例数据
+var KG_DATA = [
+  {name:'第 1 章 草图绘制基础', points:[
+    {name:'草图平面选择', level:'core', covered:true},
+    {name:'直线工具', level:'normal', covered:true},
+    {name:'矩形工具', level:'normal', covered:true},
+    {name:'圆与圆弧', level:'normal', covered:false},
+    {name:'尺寸约束', level:'key', covered:true},
+    {name:'几何关系', level:'key', covered:false},
+    {name:'镜像草图', level:'normal', covered:false},
+  ]},
+  {name:'第 2 章 拉伸特征', points:[
+    {name:'拉伸凸台/基体', level:'core', covered:true},
+    {name:'拉伸切除', level:'core', covered:true},
+    {name:'薄壁特征', level:'key', covered:false},
+    {name:'拔模斜度', level:'know', covered:false},
+  ]},
+  {name:'第 3 章 旋转与扫描', points:[
+    {name:'旋转凸台', level:'core', covered:true},
+    {name:'旋转切除', level:'key', covered:true},
+    {name:'扫描特征', level:'key', covered:false},
+    {name:'放样特征', level:'key', covered:false},
+  ]},
+  {name:'第 4 章 装配体设计', points:[
+    {name:'插入零部件', level:'core', covered:false},
+    {name:'重合配合', level:'core', covered:false},
+    {name:'同轴心配合', level:'core', covered:false},
+    {name:'距离/角度配合', level:'key', covered:false},
+    {name:'装配体干涉检查', level:'normal', covered:false},
+  ]},
+  {name:'第 5 章 工程图', points:[
+    {name:'标准三视图', level:'core', covered:false},
+    {name:'剖面视图', level:'core', covered:false},
+    {name:'局部放大图', level:'normal', covered:false},
+    {name:'尺寸标注', level:'key', covered:false},
+    {name:'表面粗糙度', level:'know', covered:false},
+  ]},
+];
+
+// 模拟 AI 回复库
+var AI_REPLIES = {
+  '如何创建拉伸凸台特征？': '### 操作步骤\n1. **选择草图平面**：点击"草图绘制"，在前视基准面（或自定义平面）上绘制二维轮廓\n2. **绘制截面**：使用矩形、圆等工具绘制闭合轮廓\n3. **退出草图**：点击右上角"退出草图"\n4. **点击"拉伸凸台/基体"** 按钮（或菜单：插入→凸台/基体→拉伸）\n5. **设置参数**：给定深度（如 30mm），可选拔模、薄壁\n6. **点击"确定"** 完成特征创建\n\n### 易错点提醒\n- 草图必须是**闭合轮廓**，否则无法拉伸\n- 拉伸方向默认垂直于草图平面，注意方向箭头\n- 快捷键 `Ctrl+Shift+Q` 可快速调出拉伸工具\n\n### 思政小课堂\n拉伸是零件从二维到三维的"生长"过程。正如工程师需要从平面思维跃升到立体思维，我们在学习和工作中也要不断突破认知边界，勇于创新。',
+  '装配体中如何添加配合关系？': '### 操作步骤\n1. **打开装配体**：文件→打开（.sldasm 文件）\n2. **插入零部件**：将零件拖入装配区\n3. **点击"配合"工具**（菜单：装配体→配合）\n4. **选择配合面**：两圆柱面→同轴心；两平面→重合\n5. **选择配合类型**：重合 / 同轴心 / 平行 / 垂直 / 距离 / 角度\n6. **点击"确定"**\n\n### 易错点提醒\n- 配合过多会导致过定义，出现红色警告\n- 螺栓装配常用：同轴心 + 重合\n-面板定位常用：重合 + 距离\n\n### 思政小课堂\n配合关系如同团队协作，每个零件各司其职又相互制约。只有合理匹配，才能让整体运转顺畅——这正是机械设计的智慧。',
+  '工程图怎么生成剖面视图？': '### 操作步骤\n1. **打开工程图**：基于零件或装配体创建工程图\n2. **放置基本视图**：拖入前视图/上视图等\n3. **点击"剖面视图"** 工具（菜单：插入→工程视图→剖面）\n4. **绘制剖切线**：用直线工具穿过视图合适位置\n5. **选择方向**：单击剖切线箭头位置\n6. **放置剖面视图**：将光标移到空白处单击放置\n\n### 易错点提醒\n- 剖切线必须穿过视图内部，否则无法生成\n- 常用类型：全剖、半剖、阶梯剖、旋转剖、局部剖\n\n### 思政小课堂\n剖面视图揭示内部结构，正如做人做事要"表里如一"。工程师不仅看外表，更要懂内在——这种求真精神是工程素养的核心。',
+  '钣金折弯系数如何设置？': '### 操作步骤\n1. **菜单**：工具→选项→文档属性→钣金\n2. **选择折弯系数类型**：K-因子 / 折弯补偿 / 折弯扣除\n3. **输入对应值**：软钢 K=0.446，不锈钢 K=0.454，铝 K=0.457\n4. **确定保存**\n\n### 易错点提醒\n- K-因子法公式：K = δ/t（δ为中性层到内表面距离，t为板厚）\n- 折弯后总长 = 直线段 + 折弯补偿\n- 高精度薄板建议用折弯补偿法\n\n### 思政小课堂\n钣金折弯的精度来自对材料特性的深入理解。做学问也是一样，只有扎实掌握基础原理，才能做到精益求精。',
+  '如何导出 STL 文件用于 3D 打印？': '### 操作步骤\n1. **打开零件文件**\n2. **菜单**：文件→另存为\n3. **选择文件类型**：STL (*.stl)\n4. **设置输出选项**：偏差选"良好"（建议 0.01mm），勾选"将曲面另存为单一曲面"\n5. **保存**\n\n### 易错点提醒\n- 模型必须是**单一实体**（无多个独立体）\n- 检查壁厚 ≥ 喷嘴直径 × 2\n- 单位使用毫米\n\n### 思政小课堂\n从数字模型到实物打印，体现的是"知行合一"的理念。设计再好，最终要落地为产品——工程师的价值在于将想法变为现实。',
+  '如何画草图？': '### 操作步骤\n1. **进入草图环境**：点击"草图绘制"→选择基准面\n2. **选择绘图工具**：直线、矩形、圆、多边形等\n3. **绘制轮廓**：在绘图区点击放置起点和终点\n4. **添加几何关系**：水平、竖直、相切、同心等\n5. **标注尺寸**：用智能尺寸工具标注长度、角度\n6. **退出草图**：点击"退出草图"\n\n### 易错点提醒\n- 草图线条颜色含义：黑=完全定义、蓝=欠定义、红=过定义\n- 每个闭合轮廓才能用于实体特征创建\n\n### 思政小课堂\n草图是设计的起点，"万丈高楼平地起"。打好基础才能构建复杂的工程模型，这是工程教育的根本。'
+};
+
+// ============================================================
+// 工具函数
+// ============================================================
+function showView(name){
+  document.getElementById('loginView').classList.toggle('hidden', name!=='login');
+  document.getElementById('chatView').classList.toggle('hidden', name!=='chat');
+  document.getElementById('teacherView').classList.toggle('hidden', name!=='teacher');
+}
+function showToast(text, type){
+  var t = document.createElement('div');
+  t.className = 'toast ' + (type||'');
+  t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 2000);
+}
+function formatTime(d){
+  var h = String(d.getHours()).padStart(2,'0');
+  var m = String(d.getMinutes()).padStart(2,'0');
+  return h + ':' + m;
+}
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+// 极简 Markdown 渲染（标题/加粗/代码/列表/段落）
+// ★ 三段式卡片直接在渲染阶段生成，不走 DOM 后处理，彻底杜绝嵌套
+function renderMd(text){
+  var sectionRegex = /^###\s+(.*)$/;
+  var sections = text.split('\n');
+  var html = '';
+  var currentType = null;   // 'operation' | 'tips' | 'sizheng'
+  var currentBody = '';
+  var listTag = '';          // '' | 'ol' | 'ul'
+
+  function closeList(){
+    if(listTag){ currentBody += '</' + listTag + '>'; listTag = ''; }
+  }
+  function flushSection(){
+    closeList();
+    if(currentType){
+      var cls = 'answer-section section-' + currentType;
+      var labels = { operation:'📋 操作步骤', tips:'⚠️ 易错点提醒', sizheng:'🎯 思政小课堂' };
+      html += '<div class="' + cls + '">' +
+        '<div class="section-header">' + labels[currentType] + '</div>' +
+        '<div class="section-body">' + currentBody + '</div>' +
+        '</div>';
+      currentType = null;
+      currentBody = '';
+    }
+  }
+
+  for(var i=0;i<sections.length;i++){
+    var l = sections[i];
+    var sMatch = l.match(sectionRegex);
+    if(sMatch){
+      // 1. 刷出上一个 section（内部会先关列表）
+      flushSection();
+      // 2. 判断新 section 类型
+      var title = sMatch[1].trim();
+      if(title.indexOf('操作步骤')>=0) currentType = 'operation';
+      else if(title.indexOf('易错点')>=0) currentType = 'tips';
+      else if(title.indexOf('思政')>=0) currentType = 'sizheng';
+      else {
+        // 不是三种分类标题，当普通 h3
+        html += '<h3>' + inlineMd(title) + '</h3>';
+      }
+    } else {
+      // 在某个 section 内 or 顶部正文区
+      if(/^\d+\.\s/.test(l)){
+        if(listTag !== 'ol'){ closeList(); listTag = 'ol'; currentBody += '<ol>'; }
+        currentBody += '<li>' + inlineMd(l.replace(/^\d+\.\s/,'')) + '</li>';
+      } else if(/^[-*]\s/.test(l)){
+        if(listTag !== 'ul'){ closeList(); listTag = 'ul'; currentBody += '<ul>'; }
+        currentBody += '<li>' + inlineMd(l.replace(/^[-*]\s/,'')) + '</li>';
+      } else {
+        closeList();
+        if(l.trim()===''){ continue; }
+        if(/^#{1,3}\s/.test(l)){
+          var h = inlineMd(l.replace(/^#{1,3}\s/,''));
+          currentBody += '<h3>' + h + '</h3>';
+        } else {
+          currentBody += '<p>' + inlineMd(l) + '</p>';
+        }
+      }
+    }
+  }
+  closeList();
+  flushSection();
+  return html;
+}
+function inlineMd(s){
+  return escapeHtml(s)
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+
+// 三段式卡片已在 renderMd 阶段直接生成，无需 DOM 后处理
+
+// ============================================================
+// AI 机器人 SVG 头像（★ 改动1）
+// ============================================================
+function robotAvatar(){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+    '<rect x="4" y="7" width="16" height="13" rx="3" fill="var(--primary-light)" stroke="currentColor"/>' +
+    '<rect x="9" y="3" width="6" height="4" rx="1" fill="var(--primary)" stroke="currentColor"/>' +
+    '<circle cx="9" cy="13" r="1.3" fill="currentColor"/>' +
+    '<circle cx="15" cy="13" r="1.3" fill="currentColor"/>' +
+    '<line x1="2" y1="11" x2="4" y2="11"/>' +
+    '<line x1="2" y1="14" x2="4" y2="14"/>' +
+    '<line x1="20" y1="11" x2="22" y2="11"/>' +
+    '<line x1="20" y1="14" x2="22" y2="14"/>' +
+    '<path d="M11 17h2" />' +
+    '<path d="M12 14v3" />' +
+  '</svg>';
+}
+
+// ============================================================
+// 登录/教师入口
+// ============================================================
+function bindLogin(){
+  document.getElementById('loginBtn').onclick = function(){
+    var name = document.getElementById('loginName').value.trim();
+    var id = document.getElementById('loginId').value.trim();
+    if(!name || !id){
+      document.getElementById('loginError').textContent = '请填写姓名和学号';
+      return;
+    }
+    STATE.student = {name:name, id:id};
+    showView('chat');
+    document.getElementById('sidebarName').textContent = name;
+    document.getElementById('sidebarId').textContent = '学号 ' + id;
+    document.getElementById('topbarUser').textContent = name + ' · ' + id;
+    showToast('登录成功！欢迎回来 ' + name, 'success');
+  };
+  document.getElementById('loginTeacherBtn').onclick = function(){
+    document.getElementById('teacherPwdModal').classList.remove('hidden');
+    document.getElementById('teacherPwdInput').value = '';
+    document.getElementById('teacherPwdInput').focus();
+  };
+}
+function closeTeacherPwd(){
+  document.getElementById('teacherPwdModal').classList.add('hidden');
+  document.getElementById('teacherPwdError').textContent = '';
+}
+function bindTeacherPwd(){
+  document.getElementById('confirmTeacherPwd').onclick = function(){
+    var pwd = document.getElementById('teacherPwdInput').value;
+    if(pwd === 'teacher123'){
+      closeTeacherPwd();
+      STATE.isTeacher = true;
+      showView('teacher');
+      renderTeacherRecords();
+      renderKG();
+      renderDashBar();
+      renderClassChapterBar();
+      showToast('欢迎，老师！', 'success');
+    } else {
+      document.getElementById('teacherPwdError').textContent = '密码错误，请重试（演示密码：teacher123）';
+    }
+  };
+  document.getElementById('teacherPwdInput').onkeydown = function(e){
+    if(e.key==='Enter') document.getElementById('confirmTeacherPwd').click();
+  };
+}
+
+// ============================================================
+// 学生对话
+// ============================================================
+function bindChat(){
+  var input = document.getElementById('messageInput');
+  var sendBtn = document.getElementById('sendBtn');
+
+  sendBtn.onclick = sendMessage;
+  input.onkeydown = function(e){
+    if(e.key==='Enter' && !e.shiftKey){
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+  input.oninput = function(){
+    var len = input.value.length;
+    document.getElementById('charCount').textContent = len + ' / 2000';
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+  };
+
+  // 建议问题
+  document.querySelectorAll('.suggestion-card[data-text]').forEach(function(b){
+    b.onclick = function(){
+      input.value = b.dataset.text;
+      sendMessage();
+    };
+  });
+
+  // 顶栏
+  document.getElementById('sidebarToggle').onclick = function(){
+    document.getElementById('sidebar').classList.toggle('collapsed');
+  };
+  document.getElementById('logoutBtn').onclick = function(){
+    STATE.messages = [];
+    STATE.student = null;
+    document.getElementById('messagesInner').innerHTML = '';
+    document.getElementById('welcomeScreen').classList.remove('hidden');
+    showView('login');
+  };
+  document.getElementById('clearBtn').onclick = function(){
+    if(confirm('确认清空所有对话？')){
+      STATE.messages = [];
+      document.getElementById('messagesInner').innerHTML = '';
+      document.getElementById('welcomeScreen').classList.remove('hidden');
+    }
+  };
+  document.getElementById('exampleBtn').onclick = function(){
+    document.getElementById('exampleModal').classList.remove('hidden');
+  };
+  document.getElementById('reportBtn').onclick = openReportModal;
+  document.getElementById('kgBtn').onclick = openKgModal;
+  document.getElementById('helpBtn').onclick = function(){
+    window.open("https://help.solidworks.com/2026/chinese-simplified/SolidWorks/sldworks/r_welcome_sw_online_help.htm", "_blank");
+  };
+}
+
+function askExample(btn){
+  var text = btn.querySelector('span:last-child').textContent;
+  document.getElementById('messageInput').value = text;
+  document.getElementById('exampleModal').classList.add('hidden');
+  sendMessage();
+}
+function closeExampleModal(){ document.getElementById('exampleModal').classList.add('hidden'); }
+
+function sendMessage(){
+  var input = document.getElementById('messageInput');
+  var text = input.value.trim();
+  if(!text || STATE.isGenerating) return;
+  input.value = '';
+  document.getElementById('charCount').textContent = '0 / 2000';
+  input.style.height = 'auto';
+
+  // 隐藏欢迎屏
+  document.getElementById('welcomeScreen').classList.add('hidden');
+
+  // 渲染用户消息
+  var inner = document.getElementById('messagesInner');
+  var userDiv = document.createElement('div');
+  userDiv.className = 'message user';
+  userDiv.innerHTML =
+    '<div class="message-avatar">' + (STATE.student?STATE.student.name.charAt(0):'U') + '</div>' +
+    '<div class="message-content">' +
+      '<div class="message-bubble">' + escapeHtml(text) + '</div>' +
+      '<div class="message-meta"><span>' + formatTime(new Date()) + '</span></div>' +
+    '</div>';
+  inner.appendChild(userDiv);
+  inner.parentElement.scrollTop = inner.parentElement.scrollHeight;
+
+  STATE.messages.push({role:'user', content:text, time:new Date()});
+  STATE.isGenerating = true;
+
+  // 流式渲染 AI 回复
+  var reply = AI_REPLIES[text] ||
+    '关于「' + text + '」这个问题，建议您：\n\n1. 打开 SolidWorks 软件\n2. 在主菜单中找到相关功能\n3. 按照步骤操作\n\n如果还有疑问，请继续提问，我会为您详细解答。';
+
+  var aiDiv = document.createElement('div');
+  aiDiv.className = 'message assistant';
+  aiDiv.innerHTML =
+    '<div class="message-avatar">' + robotAvatar() + '</div>' +
+    '<div class="message-content">' +
+      '<div class="message-bubble"></div>' +
+      '<div class="message-meta">' +
+        '<span>' + formatTime(new Date()) + '</span>' +
+        '<div class="message-actions">' +
+          '<button class="action-btn" data-copy><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  inner.appendChild(aiDiv);
+  var bubble = aiDiv.querySelector('.message-bubble');
+  var streamIdx = 0;
+  var chunkSize = 5;
+
+  function streamNext(){
+    if(streamIdx >= reply.length){
+      STATE.isGenerating = false;
+      // 三段式卡片已在 renderMd 阶段直接生成，无需后处理
+      return;
+    }
+    streamIdx = Math.min(streamIdx + chunkSize, reply.length);
+    bubble.innerHTML = renderMd(reply.slice(0, streamIdx));
+    inner.parentElement.scrollTop = inner.parentElement.scrollHeight;
+    setTimeout(streamNext, 12);
+  }
+  setTimeout(streamNext, 350);
+
+  STATE.messages.push({role:'assistant', content:reply, time:new Date()});
+}
+
+// ============================================================
+// 知识图谱（学生版 + 教师版）
+// ============================================================
+function buildKGHTML(){
+  var html = '';
+  KG_DATA.forEach(function(ch){
+    html += '<div class="kg-chapter"><div class="kg-chapter-head">' +
+      '<div class="kg-chapter-title">'+escapeHtml(ch.name)+'</div>' +
+      '<span class="kg-chapter-toggle">▼</span>' +
+      '</div><div class="kg-points">';
+    ch.points.forEach(function(p){
+      var tagHtml = '<span class="kg-tag '+(p.covered?'covered':'')+'">'+(p.covered?'已问过':'未问过')+'</span>';
+      html += '<div class="kg-point '+p.level+'">' +
+        '<div class="kg-point-name">'+escapeHtml(p.name)+'</div>' +
+        '<div class="kg-point-meta"><span class="kg-tag '+p.level+'">'+({core:'核心',key:'重点',normal:'一般',know:'了解',optional:'选学'})[p.level]+'</span>'+tagHtml+'</div>' +
+        '</div>';
+    });
+    html += '</div></div>';
+  });
+  return html;
+}
+function renderKG(){
+  var html = buildKGHTML();
+  document.getElementById('kgChaptersT').innerHTML = html;
+  document.getElementById('kgChapters').innerHTML = html;
+  // 折叠交互
+  document.querySelectorAll('.kg-chapter-head').forEach(function(h){
+    h.onclick = function(){
+      h.parentElement.classList.toggle('collapsed');
+    };
+  });
+}
+function openKgModal(){
+  document.getElementById('kgModal').classList.remove('hidden');
+}
+function closeKgModal(){
+  document.getElementById('kgModal').classList.add('hidden');
+}
+
+// ============================================================
+// 学生学习报告
+// ============================================================
+function openReportModal(){
+  document.getElementById('reportTime').textContent = formatTime(new Date());
+  document.getElementById('reportModal').classList.remove('hidden');
+}
+function closeReportModal(){
+  document.getElementById('reportModal').classList.add('hidden');
+}
+
+// ============================================================
+// 教师后台
+// ============================================================
+function bindTeacher(){
+  document.getElementById('teacherBackBtn').onclick = function(){
+    showView('login');
+  };
+  document.getElementById('teacherRefreshBtn').onclick = function(){
+    showToast('已刷新数据', 'success');
+  };
+
+  // Tab 切换
+  document.querySelectorAll('.teacher-tab').forEach(function(t){
+    t.onclick = function(){
+      document.querySelectorAll('.teacher-tab').forEach(function(x){x.classList.remove('active');});
+      t.classList.add('active');
+      var name = t.dataset.tab;
+      ['records','kg','dashboard','classReport'].forEach(function(p){
+        document.getElementById('teacherPanel'+p.charAt(0).toUpperCase()+p.slice(1)).classList.remove('active');
+      });
+      var map = {records:'Records', kg:'Kg', dashboard:'Dashboard', classReport:'ClassReport'};
+      document.getElementById('teacherPanel'+map[name]).classList.add('active');
+    };
+  });
+
+  // 班级报告时间筛选
+  document.querySelectorAll('#classTimeFilter .dash-time-btn').forEach(function(b){
+    b.onclick = function(){
+      document.querySelectorAll('#classTimeFilter .dash-time-btn').forEach(function(x){x.classList.remove('active');});
+      b.classList.add('active');
+    };
+  });
+
+  // 评价看板时间筛选
+  document.querySelectorAll('#dashTimeFilter .dash-time-btn').forEach(function(b){
+    b.onclick = function(){
+      document.querySelectorAll('#dashTimeFilter .dash-time-btn').forEach(function(x){x.classList.remove('active');});
+      b.classList.add('active');
+    };
+  });
+
+  // 搜索
+  document.getElementById('teacherSearch').oninput = function(){
+    renderTeacherRecords();
+  };
+
+  // 导出 CSV
+  document.getElementById('teacherExportBtn').onclick = function(){
+    showToast('已导出 CSV 文件', 'success');
+  };
+}
+
+function renderTeacherRecords(){
+  var q = (document.getElementById('teacherSearch')||{}).value || '';
+  var body = document.getElementById('teacherTableBody');
+  var html = '';
+  var matched = 0;
+  STATE.records.forEach(function(r){
+    if(q && r.q.indexOf(q)<0 && r.name.indexOf(q)<0) return;
+    matched++;
+    html += '<tr><td>'+r.time+'</td><td>'+r.name+'</td><td>'+r.id+'</td>' +
+      '<td class="q-content" title="'+escapeHtml(r.q)+'">'+escapeHtml(r.q)+'</td>' +
+      '<td><span class="kg-tag normal">'+r.type+'</span></td></tr>';
+  });
+  if(matched === 0){
+    html = '<tr class="teacher-empty"><td colspan="5">暂无匹配的记录</td></tr>';
+  }
+  body.innerHTML = html;
+}
+
+// ============================================================
+// 评价看板柱状图（纯 SVG，零依赖）
+// ============================================================
+function renderDashBar(){
+  var data = [
+    {name:'拉伸凸台', value:30, color:'#185FA5'},
+    {name:'装配配合', value:22, color:'#378ADD'},
+    {name:'剖面视图', value:16, color:'#A32D2D'},
+    {name:'钣金折弯', value:10, color:'#854F0B'},
+    {name:'STL 导出', value:9, color:'#5F5E5A'},
+    {name:'尺寸约束', value:8, color:'#185FA5'},
+    {name:'镜像特征', value:6, color:'#378ADD'},
+    {name:'旋转切除', value:6, color:'#A32D2D'},
+    {name:'草图绘制', value:5, color:'#854F0B'},
+    {name:'阵列特征', value:4, color:'#5F5E5A'},
+    {name:'抽壳', value:3, color:'#185FA5'},
+    {name:'拔模', value:3, color:'#378ADD'},
+    {name:'局部放大', value:2, color:'#A32D2D'},
+    {name:'干涉检查', value:2, color:'#854F0B'},
+    {name:'曲面建模', value:1, color:'#5F5E5A'},
+  ];
+  var maxV = data[0].value;
+  var w = 540, rowH = 18, padding = 6;
+  var h = data.length * rowH + padding*2;
+  var svg = '<svg viewBox="0 0 '+w+' '+h+'" style="width:100%;height:100%">';
+  data.forEach(function(d,i){
+    var y = padding + i*rowH;
+    var barW = (d.value/maxV) * (w-130);
+    svg += '<text x="0" y="'+y+rowH/2+'" font-size="11" fill="#475569" dominant-baseline="middle">'+d.name+'</text>';
+    svg += '<rect x="110" y="'+y+2+'" width="'+barW+'" height="'+rowH-6+'" fill="'+d.color+'" rx="3"/>';
+    svg += '<text x="'+ (110+barW+6) +'" y="'+y+rowH/2+'" font-size="11" fill="#1E293B" dominant-baseline="middle" font-weight="600">'+d.value+'</text>';
+  });
+  svg += '</svg>';
+  document.getElementById('dashBarBox').innerHTML = svg;
+}
+
+// 班级报告 — 各章覆盖知识点柱状图
+function renderClassChapterBar(){
+  var data = [
+    {name:'草图基础', covered:3, total:7, color:'#185FA5'},
+    {name:'拉伸特征', covered:2, total:4, color:'#378ADD'},
+    {name:'旋转/扫描', covered:2, total:4, color:'#A32D2D'},
+    {name:'装配体', covered:0, total:5, color:'#854F0B'},
+    {name:'工程图', covered:0, total:5, color:'#5F5E5A'},
+  ];
+  var maxV = 7;
+  var w = 540, rowH = 26, padding = 8;
+  var h = data.length * rowH + padding*2 + 16;
+  var svg = '<svg viewBox="0 0 '+w+' '+h+'" style="width:100%;height:100%">';
+  // 标题说明
+  svg += '<text x="0" y="10" font-size="11" fill="#94A3B8">已覆盖 / 总知识点</text>';
+  data.forEach(function(d,i){
+    var y = padding + 16 + i*rowH;
+    var barW = (d.covered/maxV) * (w-150);
+    var fullW = (d.total/maxV) * (w-150);
+    svg += '<text x="0" y="'+y+rowH/2+'" font-size="12" fill="#475569" dominant-baseline="middle">'+d.name+'</text>';
+    // 背景总条
+    svg += '<rect x="120" y="'+y+4+'" width="'+fullW+'" height="'+rowH-12+'" fill="#F1F5F9" rx="3"/>';
+    // 覆盖条
+    svg += '<rect x="120" y="'+y+4+'" width="'+barW+'" height="'+rowH-12+'" fill="'+d.color+'" rx="3"/>';
+    svg += '<text x="'+ (120+fullW+8) +'" y="'+y+rowH/2+'" font-size="11" fill="#1E293B" dominant-baseline="middle" font-weight="600">'+d.covered+' / '+d.total+'</text>';
+  });
+  svg += '</svg>';
+  document.getElementById('classChapterBar').innerHTML = svg;
+}
+
+// ============================================================
+// 导出 PDF（★ 改动2&3：班级报告 + 学生个人报告）
+// ============================================================
+function exportPDF(type){
+  var title = type === 'classReport' ? '班级报告' : '我的学习报告';
+  showToast('正在生成 ' + title + ' PDF...', 'success');
+  setTimeout(function(){
+    window.print();
+  }, 200);
+}
+
+// ============================================================
+// Init
+// ============================================================
+document.addEventListener('DOMContentLoaded', function(){
+  bindLogin();
+  bindTeacherPwd();
+  bindChat();
+  bindTeacher();
+  renderKG();
+  renderDashBar();
+  renderClassChapterBar();
+  // 提示
+  setTimeout(function(){
+    showToast('💡 演示模式 · 教师密码: teacher123', 'success');
+  }, 600);
+});
+</script>
+</body>
+</html>
