@@ -1317,12 +1317,10 @@ else if (name === "classReport") renderClassReport();
       var rateBar = showHeat
         ? '<div class="kg-chapter-progress" title="覆盖率 ' + rate + '%"><div class="kg-chapter-progress-bar" style="width:' + rate + '%; background:' + ch.color + '"></div></div>'
         : "";
-      var rateMeta = showHeat ? '<span class="kg-chapter-meta">覆盖 ' + chapCovered + '/' + chapTotal + ' · ' + rate + '%</span>' : '<span class="kg-chapter-meta">' + chapTotal + ' 个知识点</span>';
       html += '<div class="kg-chapter">'
         + '<div class="kg-chapter-head">'
         +   '<span class="kg-chapter-bar" style="background:' + ch.color + '"></span>'
         +   '<span class="kg-chapter-title">第' + ch.id + '章 · ' + escapeHtml(ch.name) + '</span>'
-        +   rateMeta
         +   rateBar
         +   '<span class="kg-chapter-toggle">▶</span>'
         + '</div>'

@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AI 教学助手 · 5 项新功能 DEMO</title>
+<style>
+/* ==================== 基础变量 ==================== */
+:root {
+  --primary: #185FA5;
+  --primary-hover: #0C447C;
+  --primary-light: #E6F1FB;
+  --primary-gradient: linear-gradient(135deg, #185FA5, #378ADD);
+  --accent: #378ADD;
+  --danger: #E24B4A;
+  --warning: #F59E0B;
+  --success: #10B981;
+  --bg: #F0F2F5;
+  --surface: #FFFFFF;
+  --surface-2: #F8FAFC;
+  --surface-3: #F1F5F9;
+  --text: #1e293b;
+  --text-2: #475569;
+  --text-3: #94a3b8;
+  --border: #E2E8F0;
+  --border-light: #F1F5F9;
+  --code-bg: #F1F5F9;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,.08), 0 2px 4px -1px rgba(0,0,0,.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -2px rgba(0,0,0,.05);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { font-family: var(--font); color: var(--text); background: var(--bg); font-size: 14px; line-height: 1.6; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+
+/* ==================== 顶部导航 ==================== */
+.topbar {
+  height: 56px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+.topbar-title { font-size: 16px; font-weight: 600; color: var(--primary); flex: 1; display: flex; align-items: center; gap: 8px; }
+.topbar-tabs { display: flex; gap: 4px; }
+.topbar-tab {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-2);
+  transition: all 0.2s;
+  position: relative;
+}
+.topbar-tab:hover { background: var(--surface-3); color: var(--text); }
+.topbar-tab.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+.topbar-badge {
+  display: inline-block;
+  background: var(--danger);
+  color: white;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  margin-left: 4px;
+  font-weight: 600;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+/* ==================== 主体 ==================== */
+.main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+.feature-section { background: var(--surface); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow-sm); }
+.feature-section.hidden { display: none; }
+.section-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.section-title .tag { font-size: 11px; padding: 2px 8px; border-radius: var(--radius-full); background: var(--primary-light); color: var(--primary); font-weight: 500; }
+.section-desc { color: var(--text-2); font-size: 13px; margin-bottom: 16px; }
+
+/* ==================== 班级报告 ==================== */
+.filter-bar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+.filter-bar select, .filter-bar input {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border 0.2s;
+}
+.filter-bar select:focus, .filter-bar input:focus { border-color: var(--primary); }
+
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.stat-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 14px;
+  position: relative;
+}
+.stat-card .label { font-size: 12px; color: var(--text-3); margin-bottom: 4px; }
+.stat-card .value { font-size: 24px; font-weight: 700; color: var(--primary); }
+.stat-card .sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+.report-block { background: var(--surface-2); border: 1px solid var(--border-light); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+.report-block-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+/* 学生下钻高亮 */
+.student-selector { background: linear-gradient(135deg, #FFF7E6, #FFFFFF); border: 1px solid #FFE0A6; padding: 12px 16px; border-radius: var(--radius); margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+.student-selector label { font-size: 13px; color: var(--text-2); font-weight: 500; }
+.student-selector .drill-hint { font-size: 11px; color: var(--warning); background: #FFF7E6; padding: 2px 8px; border-radius: var(--radius-full); }
+.student-selector select { padding: 4px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); }
+.drilling-banner { background: var(--primary-light); color: var(--primary); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+/* 报告表格 */
+.report-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.report-table th { text-align: left; padding: 8px 12px; background: var(--surface-3); color: var(--text-2); font-weight: 600; font-size: 12px; }
+.report-table td { padding: 10px 12px; border-bottom: 1px solid var(--border-light); }
+.report-table tr:hover td { background: var(--surface-2); }
+.report-table .rank-1 { background: linear-gradient(90deg, #FFF8DC, transparent); font-weight: 600; }
+.report-table .rank-2 { background: linear-gradient(90deg, #F0F0F0, transparent); }
+.report-table .rank-3 { background: linear-gradient(90deg, #FDF4E3, transparent); }
+
+/* 章节柱状图 */
+.chapter-bars { display: flex; flex-direction: column; gap: 10px; }
+.chapter-bar { display: flex; align-items: center; gap: 10px; }
+.chapter-bar .name { width: 120px; font-size: 12px; color: var(--text-2); }
+.chapter-bar .bar-track { flex: 1; height: 22px; background: var(--surface-3); border-radius: var(--radius-sm); overflow: hidden; position: relative; }
+.chapter-bar .bar-fill { height: 100%; background: var(--primary-gradient); border-radius: var(--radius-sm); transition: width 0.6s; display: flex; align-items: center; padding-left: 8px; color: white; font-size: 11px; font-weight: 600; }
+.chapter-bar .value { width: 50px; text-align: right; font-size: 12px; color: var(--text-2); font-weight: 600; }
+
+/* 导出按钮 */
+.export-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+.btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.btn-primary { background: var(--primary-gradient); color: white; box-shadow: var(--shadow-sm); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-secondary { background: var(--surface); color: var(--text-2); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--surface-3); }
+
+/* ==================== 知识图谱思维导图 ==================== */
+.mindmap-container { background: var(--surface-2); border-radius: var(--radius); padding: 16px; min-height: 600px; position: relative; overflow: auto; }
+.mindmap-svg { width: 100%; height: auto; }
+.mindmap-controls { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; }
+.mindmap-controls button { width: 32px; height: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-2); font-size: 14px; font-weight: 600; }
+.mindmap-controls button:hover { background: var(--primary-light); color: var(--primary); }
+.mindmap-legend { position: absolute; bottom: 12px; left: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 11px; display: flex; gap: 12px; }
+.mindmap-legend .legend-item { display: flex; align-items: center; gap: 4px; }
+.mindmap-legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+.mindmap-node-chapter { cursor: pointer; transition: all 0.2s; }
+.mindmap-node-chapter:hover rect { filter: brightness(1.1); }
+.mindmap-node-section { cursor: pointer; }
+.mindmap-node-point { cursor: pointer; transition: all 0.2s; }
+.mindmap-node-point:hover ellipse { stroke-width: 2.5; }
+
+.mindmap-connector { fill: none; stroke: #CBD5E1; stroke-width: 1.5; }
+.mindmap-connector-chapter { stroke: var(--primary); stroke-width: 2; }
+.mindmap-connector-active { stroke: var(--danger); stroke-width: 2.5; }
+
+/* ==================== 知识点溯源 ==================== */
+.chat-window { background: var(--surface-2); border-radius: var(--radius); padding: 16px; min-height: 500px; }
+.chat-msg { margin-bottom: 16px; display: flex; gap: 10px; }
+.chat-msg.user { flex-direction: row-reverse; }
+.chat-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+.chat-msg.user .chat-avatar { background: var(--primary); color: white; }
+.chat-msg.assistant .chat-avatar { background: var(--success); color: white; }
+.chat-bubble { max-width: 75%; padding: 10px 14px; border-radius: var(--radius); font-size: 13px; line-height: 1.7; }
+.chat-msg.user .chat-bubble { background: var(--primary); color: white; border-top-right-radius: 4px; }
+.chat-msg.assistant .chat-bubble { background: var(--surface); border: 1px solid var(--border); border-top-left-radius: 4px; }
+
+/* 溯源标签 */
+.source-tags { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.source-tags .label { font-size: 11px; color: var(--text-3); margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+.source-tag { display: inline-block; padding: 3px 8px; margin: 2px 4px 2px 0; font-size: 11px; border-radius: var(--radius-sm); background: var(--primary-light); color: var(--primary); cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
+.source-tag:hover { border-color: var(--primary); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.source-tag::before { content: '📘 '; }
+
+/* 溯源高亮 - 在思维导图中 */
+.mindmap-node-point.highlighted ellipse { stroke: var(--danger); stroke-width: 3; filter: drop-shadow(0 0 6px rgba(226, 75, 74, 0.5)); }
+
+/* ==================== 知识图谱 · 折叠列表版（与主项目一致） ==================== */
+.kg-personal-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.kg-stat-card { background: var(--surface-2); border: 1px solid var(--border-light); border-radius: var(--radius); padding: 12px; text-align: center; }
+.kg-stat-num { font-size: 24px; font-weight: 700; color: var(--primary); line-height: 1.2; }
+.kg-stat-label { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+
+.kg-search-row { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.kg-search-input { flex: 1; min-width: 180px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; }
+.kg-search-input:focus { outline: none; border-color: var(--primary); }
+.kg-level-filter { display: flex; gap: 4px; background: var(--surface-2); padding: 3px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.kg-level-btn { padding: 4px 10px; border: none; background: transparent; color: var(--text-2); font-size: 12px; border-radius: var(--radius-sm); cursor: pointer; }
+.kg-level-btn.active { background: var(--primary); color: white; }
+.kg-level-btn:hover:not(.active) { background: var(--surface-3); }
+
+.kg-chapters { display: flex; flex-direction: column; gap: 10px; }
+.kg-chapter { background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius); overflow: hidden; }
+.kg-chapter-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; user-select: none; transition: background 0.2s; }
+.kg-chapter-head:hover { background: var(--surface-2); }
+.kg-chapter-bar { width: 4px; height: 18px; border-radius: 2px; }
+.kg-chapter-title { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.kg-chapter-meta { font-size: 12px; color: var(--text-3); }
+.kg-chapter-progress { width: 100px; height: 6px; background: var(--surface-3); border-radius: 3px; overflow: hidden; }
+.kg-chapter-progress-bar { height: 100%; border-radius: 3px; transition: width 0.4s; }
+.kg-chapter-toggle { color: var(--text-3); font-size: 11px; transition: transform 0.2s; }
+.kg-chapter.open .kg-chapter-toggle { transform: rotate(90deg); }
+.kg-chapter-body { display: none; padding: 0 16px 12px 30px; border-top: 1px solid var(--border-light); }
+.kg-chapter.open .kg-chapter-body { display: block; }
+
+.kg-section { margin-top: 12px; }
+.kg-section-title { font-size: 13px; font-weight: 600; color: var(--text-2); margin-bottom: 8px; }
+.kg-group { margin-bottom: 10px; }
+.kg-group-name { font-size: 12px; color: var(--text-3); margin-bottom: 6px; }
+.kg-point-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.kg-point { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: var(--radius-sm); font-size: 12px; cursor: default; transition: all 0.2s; }
+.kg-point.covered { border: 1px solid var(--success); }
+.kg-point.uncovered { opacity: 0.7; }
+.kg-point:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.kg-tag { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 10px; color: white; font-weight: 600; }
+.kg-heat { font-size: 10px; color: var(--danger); margin-left: 4px; font-weight: 600; }
+
+.kg-legend { display: flex; gap: 14px; align-items: center; margin-top: 16px; padding: 10px 14px; background: var(--surface-2); border-radius: var(--radius-sm); font-size: 11px; color: var(--text-3); flex-wrap: wrap; }
+.kg-legend-title { font-weight: 600; color: var(--text-2); }
+.kg-legend-item { display: flex; align-items: center; gap: 4px; }
+.kg-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ==================== 问题预警 ==================== */
+.alert-list { display: flex; flex-direction: column; gap: 10px; }
+.alert-item {
+  background: linear-gradient(135deg, #FFF5F5, var(--surface));
+  border-left: 4px solid var(--danger);
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.alert-item:hover { transform: translateX(4px); box-shadow: var(--shadow); }
+.alert-item.warning { border-color: var(--warning); background: linear-gradient(135deg, #FFFBEB, var(--surface)); }
+.alert-icon { font-size: 20px; flex-shrink: 0; }
+.alert-content { flex: 1; }
+.alert-content .title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.alert-content .desc { font-size: 12px; color: var(--text-2); }
+.alert-count { background: var(--danger); color: white; padding: 4px 10px; border-radius: var(--radius-full); font-size: 12px; font-weight: 600; }
+.alert-item.warning .alert-count { background: var(--warning); }
+
+/* ==================== 浮窗 ==================== */
+.tooltip { position: fixed; background: rgba(15, 23, 42, 0.95); color: white; padding: 8px 12px; border-radius: var(--radius-sm); font-size: 12px; pointer-events: none; z-index: 9999; max-width: 280px; box-shadow: var(--shadow-lg); }
+.tooltip-arrow { position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%) rotate(45deg); width: 8px; height: 8px; background: rgba(15, 23, 42, 0.95); }
+
+/* ==================== 学生切换 ==================== */
+.student-pill { display: inline-block; padding: 4px 10px; background: var(--primary-light); color: var(--primary); border-radius: var(--radius-full); font-size: 12px; font-weight: 500; margin-right: 4px; }
+.student-pill.muted { background: var(--surface-3); color: var(--text-3); }
+
+/* ==================== 进度条 ==================== */
+.progress-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.progress-row .label { width: 180px; font-size: 12px; color: var(--text-2); }
+.progress-row .track { flex: 1; height: 18px; background: var(--surface-3); border-radius: var(--radius-full); overflow: hidden; }
+.progress-row .fill { height: 100%; border-radius: var(--radius-full); transition: width 0.6s; }
+.progress-row .pct { width: 50px; text-align: right; font-size: 12px; font-weight: 600; }
+
+/* ==================== 模态 ==================== */
+.modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center; }
+.modal-mask.active { display: flex; }
+.modal-box { background: var(--surface); border-radius: var(--radius-lg); padding: 24px; max-width: 600px; width: 90%; max-height: 80vh; overflow: auto; }
+.modal-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+.modal-body { color: var(--text-2); line-height: 1.7; font-size: 14px; }
+.modal-body ul { margin: 12px 0 12px 20px; }
+.modal-body li { margin-bottom: 6px; }
+.modal-close { float: right; cursor: pointer; color: var(--text-3); font-size: 20px; }
+.modal-close:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<div class="topbar">
+  <div class="topbar-title">🎓 AI 教学助手 · 5 项新功能 DEMO</div>
+  <div class="topbar-tabs">
+    <button class="topbar-tab active" data-tab="classReport">班级报告 <span class="topbar-badge" id="alertBadge">3</span></button>
+    <button class="topbar-tab" data-tab="mindmap">知识图谱</button>
+    <button class="topbar-tab" data-tab="source">回答溯源</button>
+    <button class="topbar-tab" data-tab="alert">问题预警</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ========== 功能 1+2：班级报告（含导出 + 学生下钻） ========== -->
+  <div class="feature-section" id="section-classReport">
+    <div class="section-title">
+      <span>📊 班级学习报告</span>
+      <span class="tag">功能1·报告导出 + 功能2·学生下钻</span>
+    </div>
+    <div class="section-desc">教师可在「班级报告」tab 中按学生下钻，查看任意学生的个人学情；同时支持将班级报告/学习报告导出为 PDF 打印。</div>
+
+    <!-- 学生下钻选择器 -->
+    <div class="student-selector">
+      <label>👤 查看模式：</label>
+      <select id="studentSelect">
+        <option value="__class__">📊 班级整体报告</option>
+        <option value="2023001">👤 张明（2023001）- 3D建模方向</option>
+        <option value="2023002">👤 李华（2023002）- 基础薄弱</option>
+        <option value="2023003">👤 王芳（2023003）- 学霸型</option>
+        <option value="2023004">👤 陈强（2023004）- 装配体专长</option>
+        <option value="2023005">👤 刘洋（2023005）- 几乎未问</option>
+      </select>
+      <span class="drill-hint">▼ 切换学生即可下钻查看其学习报告</span>
+    </div>
+
+    <!-- 筛选 + 导出 -->
+    <div class="export-bar">
+      <button class="btn btn-primary" onclick="exportReportPDF()">📄 导出 PDF</button>
+      <button class="btn btn-secondary" onclick="exportReportPNG()">🖼️ 导出图片</button>
+      <button class="btn btn-secondary" onclick="window.print()">🖨️ 打印</button>
+      <div style="flex:1"></div>
+      <div class="filter-bar" style="margin:0">
+        <span style="font-size:12px;color:var(--text-3)">时间范围：</span>
+        <select id="timeFilter">
+          <option value="week">本周</option>
+          <option value="month">本月</option>
+          <option value="all" selected>全部</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 下钻提示横幅 -->
+    <div id="drillBanner" class="drilling-banner" style="display:none">
+      <span>🔍</span>
+      <span>当前查看：<strong id="drillStudentName"></strong> 的个人学习报告</span>
+    </div>
+
+    <!-- 报告内容区 -->
+    <div id="reportContent">
+      <!-- 班级报告 4 卡 -->
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="label">参与学生</div>
+          <div class="value" id="crStudents">--</div>
+          <div class="sub">较上周 +2</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">提问总数</div>
+          <div class="value" id="crTotal">--</div>
+          <div class="sub">日均 12.4</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">人均提问</div>
+          <div class="value" id="crAvg">--</div>
+          <div class="sub">较上周 +0.8</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">知识点覆盖率</div>
+          <div class="value" id="crCoverage">--</div>
+          <div class="sub" id="crCoverageSub">-- / 65 个知识点</div>
+        </div>
+      </div>
+
+      <!-- 章节覆盖 -->
+      <div class="report-block">
+        <div class="report-block-title">📚 各章节提问覆盖率</div>
+        <div class="chapter-bars" id="chapterBars"></div>
+      </div>
+
+      <!-- 学生下钻时显示的内容 -->
+      <div id="drillContent" style="display:none">
+        <div class="report-block">
+          <div class="report-block-title">🎯 个人章节掌握情况</div>
+          <div id="studentChapterProgress"></div>
+        </div>
+        <div class="report-block">
+          <div class="report-block-title">💬 该学生最近提问记录</div>
+          <div id="studentRecentList"></div>
+        </div>
+        <div class="report-block" style="background:linear-gradient(135deg, #E6F1FB, var(--surface));border-color:#B6D7F0">
+          <div class="report-block-title">💡 个性化学习建议</div>
+          <div id="studentSuggestion" style="font-size:13px;color:var(--text-2);line-height:1.8"></div>
+        </div>
+      </div>
+
+      <!-- 班级报告内容 -->
+      <div id="classContent">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="report-block">
+            <div class="report-block-title">🏆 学生参与度 TOP 5</div>
+            <table class="report-table" id="rankTable">
+              <thead><tr><th>排名</th><th>学号</th><th>姓名</th><th>提问数</th><th>覆盖点</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="report-block">
+            <div class="report-block-title">🔥 高频问题 TOP 5</div>
+            <table class="report-table" id="hotTable">
+              <thead><tr><th>排名</th><th>问题</th><th>次数</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="report-block" style="background:linear-gradient(135deg, #E6F1FB, var(--surface));border-color:#B6D7F0">
+          <div class="report-block-title">💡 教学建议</div>
+          <div id="classSuggestion" style="font-size:13px;color:var(--text-2);line-height:1.8"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 功能 3：知识图谱（折叠列表版，与主项目一致） ========== -->
+  <div class="feature-section hidden" id="section-mindmap">
+    <div class="section-title">
+      <span>📚 知识图谱</span>
+      <span class="tag">功能3·与主项目一致的折叠列表方案</span>
+    </div>
+    <div class="section-desc">5 章 14 节 65 个知识点折叠列表呈现，支持搜索、按重点程度筛选。被问过的知识点带「被问 X 次」标识，多人询问的知识点红色脉冲高亮。</div>
+
+    <!-- 个人统计卡 -->
+    <div class="kg-personal-stats" id="kgPersonalStats">
+      <div class="kg-stat-card"><div class="kg-stat-num" id="kgStatTotal">--</div><div class="kg-stat-label">总知识点</div></div>
+      <div class="kg-stat-card"><div class="kg-stat-num" id="kgStatAsked">--</div><div class="kg-stat-label">我已问过</div></div>
+      <div class="kg-stat-card"><div class="kg-stat-num" id="kgStatRate">--</div><div class="kg-stat-label">我的覆盖率</div></div>
+      <div class="kg-stat-card"><div class="kg-stat-num" id="kgStatQuestions">--</div><div class="kg-stat-label">我的提问数</div></div>
+    </div>
+
+    <!-- 搜索 + 筛选 -->
+    <div class="kg-search-row">
+      <input type="text" id="kgSearchInput" class="kg-search-input" placeholder="搜索知识点名称...">
+      <div class="kg-level-filter" id="kgLevelFilter">
+        <button class="kg-level-btn active" data-level="all">全部</button>
+        <button class="kg-level-btn" data-level="core">核心</button>
+        <button class="kg-level-btn" data-level="key">重点</button>
+        <button class="kg-level-btn" data-level="normal">一般</button>
+        <button class="kg-level-btn" data-level="know">了解</button>
+        <button class="kg-level-btn" data-level="optional">选学</button>
+      </div>
+    </div>
+
+    <!-- 章节折叠列表 -->
+    <div class="kg-chapters" id="kgChapters"></div>
+
+    <!-- 图例 -->
+    <div class="kg-legend">
+      <span class="kg-legend-title">重点程度：</span>
+      <span class="kg-legend-item"><span class="kg-dot" style="background:#A32D2D"></span>核心</span>
+      <span class="kg-legend-item"><span class="kg-dot" style="background:#854F0B"></span>重点</span>
+      <span class="kg-legend-item"><span class="kg-dot" style="background:#185FA5"></span>一般</span>
+      <span class="kg-legend-item"><span class="kg-dot" style="background:#5F5E5A"></span>了解</span>
+      <span class="kg-legend-item"><span class="kg-dot" style="background:#888780"></span>选学</span>
+      <span class="kg-legend-item" style="margin-left:8px"><span class="kg-dot" style="background:var(--danger);animation:pulse 1.5s infinite"></span>多人问过</span>
+    </div>
+  </div>
+
+  <!-- ========== 功能 4：AI 回答知识点溯源 ========== -->
+  <div class="feature-section hidden" id="section-source">
+    <div class="section-title">
+      <span>🔗 AI 回答 · 知识点溯源</span>
+      <span class="tag">功能6·回答末尾自动列出相关知识点</span>
+    </div>
+    <div class="section-desc">学生问完问题后，AI 回答末尾自动列出本次涉及的知识点，点击可跳转到知识图谱查看详情和关联章节。</div>
+
+    <div class="chat-window" id="chatWindow">
+      <!-- 对话内容由 JS 注入 -->
+    </div>
+  </div>
+
+  <!-- ========== 功能 5：教师端问题预警 ========== -->
+  <div class="feature-section hidden" id="section-alert">
+    <div class="section-title">
+      <span>🚨 教师端 · 实时问题预警</span>
+      <span class="tag">功能7·知识点被多人询问时红点提醒</span>
+    </div>
+    <div class="section-desc">当某个知识点被 ≥ 3 个学生询问时，自动在教师后台顶栏弹红点提醒，点击可跳转到对应知识点详情。</div>
+
+    <div class="alert-list" id="alertList"></div>
+  </div>
+
+</div>
+
+<!-- 浮窗提示 -->
+<div id="tooltip" class="tooltip" style="display:none"></div>
+
+<!-- 模态弹窗 -->
+<div id="modal" class="modal-mask" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <span class="modal-close" onclick="closeModal()">×</span>
+    <div class="modal-title" id="modalTitle">知识点详情</div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+/* ==================== 知识图谱数据（同步自 js/knowledge-graph.js） ==================== */
+const LEVEL_META = {
+  core:     { label: '核心', bg: '#FCEBEB', color: '#A32D2D' },
+  key:      { label: '重点', bg: '#FAEEDA', color: '#854F0B' },
+  normal:   { label: '一般', bg: '#E6F1FB', color: '#185FA5' },
+  know:     { label: '了解', bg: '#F1EFE8', color: '#5F5E5A' },
+  optional: { label: '选学', bg: '#F1EFE8', color: '#888780' }
+};
+
+const KNOWLEDGE_GRAPH = {
+  chapters: [
+    {
+      id: 1, name: '软件入门基础', color: '#185FA5',
+      sections: [
+        {
+          id: '1.1', name: '软件入门与基础操作', groups: [
+            { id: '1.1.1', name: '软件模块与文件管理', points: [
+              { name: '三大核心模块功能', level: 'core' },
+              { name: '文件新建保存规范', level: 'normal' }
+            ]},
+            { id: '1.1.2', name: '界面与视图操控', points: [
+              { name: '界面四大分区功能', level: 'know' },
+              { name: '鼠标视图操控', level: 'key' }
+            ]}
+          ]
+        }
+      ]
+    },
+    {
+      id: 2, name: '二维草图设计', color: '#3B6D11',
+      sections: [
+        {
+          id: '2.1', name: '草图环境与基础绘制', groups: [
+            { id: '2.1.1', name: '草图环境', points: [
+              { name: '草图环境操作', level: 'normal' },
+              { name: '草图基准面选择', level: 'normal' }
+            ]},
+            { id: '2.1.2', name: '基础草图绘制', points: [
+              { name: '直线矩形绘制', level: 'core' },
+              { name: '圆弧图形绘制', level: 'core' },
+              { name: '椭圆曲线绘制', level: 'normal' }
+            ]}
+          ]
+        },
+        {
+          id: '2.2', name: '草图编辑约束与标注', groups: [
+            { id: '2.2.1', name: '草图编辑', points: [
+              { name: '草图实体操纵', level: 'normal' },
+              { name: '倒角圆角编辑', level: 'key' },
+              { name: '草图剪裁', level: 'key' },
+              { name: '草图实体变换', level: 'key' }
+            ]},
+            { id: '2.2.2', name: '几何约束管理', points: [
+              { name: '核心约束类型', level: 'core' },
+              { name: '约束管理', level: 'key' }
+            ]},
+            { id: '2.2.3', name: '尺寸标注管理', points: [
+              { name: '尺寸标注', level: 'core' },
+              { name: '尺寸数值格式修改', level: 'key' }
+            ]}
+          ]
+        }
+      ]
+    },
+    {
+      id: 3, name: '零件实体建模', color: '#BA7517',
+      sections: [
+        {
+          id: '3.1', name: '基础拉伸类零件特征', groups: [
+            { id: '3.1.1', name: '拉伸凸台切除', points: [
+              { name: '拉伸草图要求', level: 'core' },
+              { name: '拉伸深度类型参数', level: 'core' },
+              { name: '拉伸切除', level: 'core' },
+              { name: '薄壁拉伸', level: 'normal' }
+            ]},
+            { id: '3.1.2', name: '旋转凸台切除', points: [
+              { name: '旋转草图轴线设置', level: 'key' },
+              { name: '旋转角度切除', level: 'key' }
+            ]},
+            { id: '3.1.3', name: '倒角与圆角', points: [
+              { name: '多类型倒角创建', level: 'key' },
+              { name: '恒定半径圆角', level: 'core' }
+            ]},
+            { id: '3.1.4', name: '孔特征设计', points: [
+              { name: '简单直孔定位', level: 'key' },
+              { name: '异形标准孔参数', level: 'key' }
+            ]},
+            { id: '3.1.5', name: '筋与抽壳特征', points: [
+              { name: '筋特征创建', level: 'key' },
+              { name: '抽壳操作', level: 'know' }
+            ]},
+            { id: '3.1.6', name: '拔模与装饰螺纹', points: [
+              { name: '拔模斜度设置', level: 'normal' },
+              { name: '装饰螺纹线', level: 'normal' }
+            ]}
+          ]
+        },
+        {
+          id: '3.2', name: '高级实体特征', groups: [
+            { id: '3.2.1', name: '实体变换操作', points: [
+              { name: '实体平移复制', level: 'know' },
+              { name: '实体旋转变换', level: 'know' }
+            ]},
+            { id: '3.2.2', name: '特征阵列操作', points: [
+              { name: '线性圆周阵列', level: 'core' },
+              { name: '草图驱动填充阵列', level: 'know' }
+            ]},
+            { id: '3.2.3', name: '特征镜像操作', points: [
+              { name: '基准面镜像特征', level: 'key' },
+              { name: '镜像功能应用', level: 'normal' }
+            ]},
+            { id: '3.2.4', name: '扫描特征', points: [
+              { name: '扫描特征要素', level: 'key' },
+              { name: '扫描特征操作', level: 'normal' }
+            ]},
+            { id: '3.2.5', name: '放样特征', points: [
+              { name: '放样特征要素', level: 'key' },
+              { name: '放样特征操作', level: 'normal' }
+            ]}
+          ]
+        },
+        {
+          id: '3.3', name: '零件相关知识', groups: [
+            { id: '3.3.1', name: '零件基础属性', points: [
+              { name: '零件材质选用', level: 'normal' },
+              { name: '零件单位修改', level: 'know' }
+            ]},
+            { id: '3.3.2', name: '参考几何体', points: [
+              { name: '基准面轴创建', level: 'core' },
+              { name: '基准点坐标系', level: 'optional' }
+            ]},
+            { id: '3.3.3', name: '特征编辑', points: [
+              { name: '特征尺寸修改', level: 'key' },
+              { name: '特征草图重定义', level: 'core' },
+              { name: '特征父子关系', level: 'normal' },
+              { name: '设计树认识', level: 'core' },
+              { name: '特征删除处理', level: 'normal' },
+              { name: '特征排序插入', level: 'normal' },
+              { name: '特征失败修复', level: 'know' }
+            ]}
+          ]
+        }
+      ]
+    },
+    {
+      id: 4, name: '装配体设计', color: '#534AB7',
+      sections: [
+        {
+          id: '4.1', name: '装配体基础设计', groups: [
+            { id: '4.1.1', name: '装配配合约束', points: [
+              { name: '基础配合类型', level: 'core' }
+            ]},
+            { id: '4.1.2', name: '零部件编辑管理', points: [
+              { name: '装配创建流程', level: 'normal' },
+              { name: '装配环境零件修改', level: 'key' },
+              { name: '零件状态管理', level: 'key' }
+            ]},
+            { id: '4.1.3', name: '装配视图与检测', points: [
+              { name: '显示状态切换', level: 'normal' },
+              { name: '爆炸视图创建', level: 'normal' },
+              { name: '装配干涉检查', level: 'core' }
+            ]}
+          ]
+        }
+      ]
+    },
+    {
+      id: 5, name: '工程图设计', color: '#A32D2D',
+      sections: [
+        {
+          id: '5.1', name: '工程图设计', groups: [
+            { id: '5.1', name: '视图创建', points: [
+              { name: '基本辅助视图', level: 'core' },
+              { name: '剖视图创建', level: 'core' },
+              { name: '局部放大断裂视图', level: 'normal' }
+            ]}
+          ]
+        },
+        {
+          id: '5.2', name: '标注与出图设置', groups: [
+            { id: '5.2', name: '标注与出图', points: [
+              { name: '尺寸公差标注', level: 'core' },
+              { name: '粗糙度形位公差', level: 'normal' },
+              { name: '技术要求标注', level: 'normal' }
+            ]}
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+/* ==================== 模拟数据 ==================== */
+const STUDENTS = {
+  '2023001': { name: '张明', questions: 28, mastered: 24, weak: ['扫描特征', '放样特征', '工程图标注'] },
+  '2023002': { name: '李华', questions: 12, mastered: 8, weak: ['草图基础', '拉伸凸台', '约束管理'] },
+  '2023003': { name: '王芳', questions: 45, mastered: 52, weak: ['异形标准孔'] },
+  '2023004': { name: '陈强', questions: 22, mastered: 20, weak: ['草图绘制'] },
+  '2023005': { name: '刘洋', questions: 3, mastered: 2, weak: ['全部章节'] }
+};
+
+const CLASS_RANK = [
+  { id: '2023003', name: '王芳', questions: 45, covered: 52 },
+  { id: '2023001', name: '张明', questions: 28, covered: 24 },
+  { id: '2023004', name: '陈强', questions: 22, covered: 20 },
+  { id: '2023012', name: '赵静', questions: 18, covered: 16 },
+  { id: '2023002', name: '李华', questions: 12, covered: 8 }
+];
+
+const HOT_QUESTIONS = [
+  { text: '拉伸特征怎么用？', count: 18 },
+  { text: '草图约束怎么加？', count: 15 },
+  { text: '装配体如何配合？', count: 12 },
+  { text: '工程图怎么标注尺寸？', count: 9 },
+  { text: '扫描和放样有什么区别？', count: 7 }
+];
+
+// 各知识点被询问次数（用于预警）
+const POINT_ASK_COUNT = {
+  '三大核心模块功能': 5, '鼠标视图操控': 3, '直线矩形绘制': 8, '圆弧图形绘制': 6,
+  '倒角圆角编辑': 7, '草图剪裁': 5, '核心约束类型': 9, '尺寸标注': 11,
+  '拉伸凸台切除': 12, '拉伸深度类型参数': 8, '拉伸切除': 7, '恒定半径圆角': 6,
+  '多类型倒角创建': 5, '异形标准孔参数': 4, '筋特征创建': 3, '线性圆周阵列': 7,
+  '扫描特征要素': 8, '放样特征要素': 6, '基准面轴创建': 4, '设计树认识': 5,
+  '基础配合类型': 9, '装配干涉检查': 6, '爆炸视图创建': 3, '基本辅助视图': 7,
+  '剖视图创建': 8, '尺寸公差标注': 5
+};
+
+/* ==================== tab 切换 ==================== */
+document.querySelectorAll('.topbar-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.dataset.tab;
+    document.querySelectorAll('.topbar-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.feature-section').forEach(s => s.classList.add('hidden'));
+    document.getElementById('section-' + target).classList.remove('hidden');
+    // 进入图谱时若还没渲染则渲染
+    if (target === 'mindmap' && !document.getElementById('kgChapters').innerHTML) {
+      setTimeout(renderMindmap, 100);
+    }
+  });
+});
+
+/* ==================== 学生下钻逻辑 ==================== */
+document.getElementById('studentSelect').addEventListener('change', (e) => {
+  const sid = e.target.value;
+  if (sid === '__class__') {
+    document.getElementById('drillBanner').style.display = 'none';
+    document.getElementById('drillContent').style.display = 'none';
+    document.getElementById('classContent').style.display = 'block';
+    renderClassReport();
+  } else {
+    const stu = STUDENTS[sid];
+    document.getElementById('drillStudentName').textContent = `${stu.name}（${sid}）`;
+    document.getElementById('drillBanner').style.display = 'flex';
+    document.getElementById('drillContent').style.display = 'block';
+    document.getElementById('classContent').style.display = 'none';
+    renderStudentDrill(sid);
+  }
+});
+
+/* ==================== 班级报告渲染 ==================== */
+function renderClassReport() {
+  document.getElementById('crStudents').textContent = 28;
+  document.getElementById('crTotal').textContent = 156;
+  document.getElementById('crAvg').textContent = '5.6';
+  document.getElementById('crCoverage').textContent = '78%';
+  document.getElementById('crCoverageSub').textContent = '51 / 65 个知识点';
+
+  // 章节柱状图
+  const chapters = [
+    { name: '软件入门基础', count: 18, color: '#185FA5' },
+    { name: '二维草图设计', count: 42, color: '#3B6D11' },
+    { name: '零件实体建模', count: 56, color: '#BA7517' },
+    { name: '装配体设计', count: 24, color: '#534AB7' },
+    { name: '工程图设计', count: 16, color: '#A32D2D' }
+  ];
+  const max = Math.max(...chapters.map(c => c.count));
+  document.getElementById('chapterBars').innerHTML = chapters.map(c => `
+    <div class="chapter-bar">
+      <div class="name">${c.name}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${c.count/max*100}%;background:${c.color}">${c.count}</div></div>
+      <div class="value">${c.count}次</div>
+    </div>
+  `).join('');
+
+  // 排行榜
+  document.querySelector('#rankTable tbody').innerHTML = CLASS_RANK.map((s, i) => `
+    <tr class="rank-${i+1}">
+      <td>${['🥇','🥈','🥉','④','⑤'][i]}</td>
+      <td>${s.id}</td>
+      <td>${s.name}</td>
+      <td><strong>${s.questions}</strong></td>
+      <td>${s.covered}</td>
+    </tr>
+  `).join('');
+
+  // 高频问题
+  document.querySelector('#hotTable tbody').innerHTML = HOT_QUESTIONS.map((q, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td>${q.text}</td>
+      <td><strong style="color:var(--danger)">${q.count}</strong></td>
+    </tr>
+  `).join('');
+
+  // 教学建议
+  document.getElementById('classSuggestion').innerHTML = `
+    <strong>📌 重点关注：</strong>「二维草图设计」和「零件实体建模」两章提问量占比 63%，是班级学习难点，建议课堂重点讲解。<br>
+    <strong>👥 学情分层：</strong>王芳、张明等 5 名学生提问量 ≥ 20，可作为课堂"小老师"；李华、刘洋等学生参与度低，建议课后单独辅导。<br>
+    <strong>📈 改进建议：</strong>「工程图设计」提问最少（仅 16 次），可能是学生尚未学到此章，可在下周课堂上提前预告。
+  `;
+}
+
+/* ==================== 学生下钻渲染 ==================== */
+function renderStudentDrill(sid) {
+  const stu = STUDENTS[sid];
+  const chapterData = [
+    { name: '软件入门基础', mastered: 4, total: 4, level: 'normal' },
+    { name: '二维草图设计', mastered: stu.questions >= 20 ? 8 : 5, total: 13, level: stu.questions >= 20 ? 'good' : 'normal' },
+    { name: '零件实体建模', mastered: stu.questions >= 20 ? 15 : 8, total: 28, level: stu.questions >= 20 ? 'good' : 'normal' },
+    { name: '装配体设计', mastered: stu.questions >= 20 ? 4 : 2, total: 8, level: 'normal' },
+    { name: '工程图设计', mastered: sid === '2023003' ? 6 : 1, total: 7, level: sid === '2023003' ? 'good' : 'weak' }
+  ];
+  const colors = { good: 'var(--success)', normal: 'var(--primary)', weak: 'var(--danger)' };
+
+  document.getElementById('studentChapterProgress').innerHTML = chapterData.map(c => {
+    const pct = Math.round(c.mastered / c.total * 100);
+    return `<div class="progress-row">
+      <div class="label">${c.name}</div>
+      <div class="track"><div class="fill" style="width:${pct}%;background:${colors[c.level]}"></div></div>
+      <div class="pct">${c.mastered}/${c.total} (${pct}%)</div>
+    </div>`;
+  }).join('');
+
+  // 最近提问（模拟）
+  const recentQs = {
+    '2023001': ['拉伸深度怎么设置成两侧对称？', '扫描特征做不出来怎么办？', '草图约束冲突怎么解决？', '工程图标注怎么改字体大小？'],
+    '2023002': ['怎么新建一个零件文件？', '拉伸按钮在哪里？', '尺寸标注后变成黑色了？'],
+    '2023003': ['异形孔的孔类型怎么选？', '扫描和放样在工程中怎么选？', '干涉检查显示有冲突怎么定位？', '拔模斜度一般取多少？', '工程图怎么出装配体的BOM？'],
+    '2023004': ['装配体里怎么添加新零件？', '怎么把零件改成透明显示？', '装配体爆炸视图怎么创建？'],
+    '2023005': ['软件怎么打开？']
+  };
+  document.getElementById('studentRecentList').innerHTML = (recentQs[sid] || []).map((q, i) => `
+    <div style="padding:6px 0;border-bottom:1px solid var(--border-light);font-size:13px">
+      <span class="student-pill">${i+1}</span>${q}
+    </div>
+  `).join('');
+
+  // 个性化建议
+  let sug = '';
+  if (sid === '2023001') sug = `<strong>🎯 ${stu.name} 同学：</strong>整体学习情况良好，提问数 28 次，覆盖 24 个知识点。<br>薄弱点是「扫描特征」「放样特征」等高级特征，建议结合实例（如弹簧、塑料瓶）练习；工程图标注需要多练国标。`;
+  else if (sid === '2023002') sug = `<strong>⚠️ ${stu.name} 同学：</strong>提问数仅 12 次，章节覆盖率较低。<br>建议从基础入手：先打通「软件入门」→「草图基础」→「拉伸」这条主路径，每章至少完成 2 个练习题后再往下走。`;
+  else if (sid === '2023003') sug = `<strong>🏆 ${stu.name} 同学：</strong>学霸型，已覆盖 52/65 个知识点，遥遥领先。<br>建议挑战「异形标准孔」「装饰螺纹线」等选学内容；可作为"小老师"帮助其他同学。`;
+  else if (sid === '2023004') sug = `<strong>📌 ${stu.name} 同学：</strong>专攻装配体方向，草图基础稍弱。<br>建议补一下「草图绘制」和「约束管理」，否则后续复杂建模会卡壳。`;
+  else if (sid === '2023005') sug = `<strong>🚨 ${stu.name} 同学：</strong>仅 3 次提问，所有章节均未覆盖。<br>建议老师主动沟通，了解是否遇到学习困难，必要时安排课后辅导。`;
+  document.getElementById('studentSuggestion').innerHTML = sug;
+}
+
+/* ==================== 功能 1：报告导出 PDF/PNG ==================== */
+function exportReportPDF() {
+  const mode = document.getElementById('studentSelect').value;
+  const targetName = mode === '__class__' ? '班级报告' : `${STUDENTS[mode].name}的学习报告`;
+  // 方式1：调浏览器打印（用户可选"另存为 PDF"）
+  showTooltip(event.target, '💡 已唤起打印对话框，请选择"另存为 PDF"作为打印机');
+  setTimeout(() => window.print(), 200);
+}
+function exportReportPNG() {
+  showTooltip(event.target, '💡 实际项目中用 html2canvas 截图保存，这里示意唤起打印');
+  setTimeout(() => window.print(), 200);
+}
+
+/* ==================== 功能 3：知识图谱（折叠列表版，与主项目一致） ==================== */
+let kgState = { search: '', level: 'all' };
+
+function buildKGHTML() {
+  const chapters = KNOWLEDGE_GRAPH.chapters;
+  const heat = POINT_ASK_COUNT;
+  let html = '';
+  for (let ci = 0; ci < chapters.length; ci++) {
+    const ch = chapters[ci];
+    let chapTotal = 0, chapCovered = 0;
+    let hasVisiblePoint = false;
+    for (let si = 0; si < ch.sections.length; si++) {
+      const sec = ch.sections[si];
+      for (let gi = 0; gi < sec.groups.length; gi++) {
+        const g = sec.groups[gi];
+        for (let pi = 0; pi < g.points.length; pi++) {
+          const p = g.points[pi];
+          chapTotal++;
+          if ((heat[p.name] || 0) > 0) chapCovered++;
+          if (matchesKGFilter(p)) hasVisiblePoint = true;
+        }
+      }
+    }
+    if ((kgState.search || kgState.level !== 'all') && !hasVisiblePoint) continue;
+    const rate = chapTotal ? Math.round(chapCovered * 100 / chapTotal) : 0;
+    const rateBar = `<div class="kg-chapter-progress" title="覆盖率 ${rate}%"><div class="kg-chapter-progress-bar" style="width:${rate}%; background:${ch.color}"></div></div>`;
+    // 不显示每章数量标识（已按用户要求去掉）
+    html += `<div class="kg-chapter open">
+      <div class="kg-chapter-head" data-chapter="${ci}">
+        <span class="kg-chapter-bar" style="background:${ch.color}"></span>
+        <span class="kg-chapter-title">第${ch.id}章 · ${escapeHtml(ch.name)}</span>
+        ${rateBar}
+        <span class="kg-chapter-toggle">▶</span>
+      </div>
+      <div class="kg-chapter-body">`;
+    for (let si = 0; si < ch.sections.length; si++) {
+      const sec = ch.sections[si];
+      html += `<div class="kg-section"><div class="kg-section-title">${escapeHtml(sec.id)} ${escapeHtml(sec.name)}</div>`;
+      for (let gi = 0; gi < sec.groups.length; gi++) {
+        const g = sec.groups[gi];
+        let pointsHTML = '';
+        for (let pi = 0; pi < g.points.length; pi++) {
+          const p = g.points[pi];
+          if (!matchesKGFilter(p)) continue;
+          const lm = LEVEL_META[p.level] || { label: p.level, color: '#5F5E5A', bg: '#F1EFE8' };
+          const h = heat[p.name] || 0;
+          const covered = h > 0;
+          const cls = covered ? 'covered' : 'uncovered';
+          const heatHTML = `<span class="kg-heat">${covered ? '被问 ' + h + ' 次' : '未被问及'}</span>`;
+          pointsHTML += `<span class="kg-point ${cls}" style="background:${lm.bg}; color:${lm.color}" data-name="${escapeAttr(p.name)}" data-pid="${ci}-${si}-${gi}-${pi}">
+            <span class="kg-tag" style="background:${lm.color}; color:#fff">${lm.label}</span>
+            ${escapeHtml(p.name)}
+            ${heatHTML}
+          </span>`;
+        }
+        if (!pointsHTML) continue;
+        html += `<div class="kg-group"><div class="kg-group-name">${escapeHtml(g.id)} ${escapeHtml(g.name)}</div><div class="kg-point-list">${pointsHTML}</div></div>`;
+      }
+      html += `</div>`;
+    }
+    html += `</div></div>`;
+  }
+  if (!html) return '<div style="text-align:center;color:var(--text-3);padding:30px 0">没有匹配的知识点</div>';
+  return html;
+}
+
+function matchesKGFilter(p) {
+  if (kgState.level !== 'all' && p.level !== kgState.level) return false;
+  if (kgState.search && p.name.indexOf(kgState.search) === -1) return false;
+  return true;
+}
+
+function renderMindmap() {
+  // 个人统计卡
+  let total = 0, asked = 0, myQuestions = 0;
+  const myAskedSet = {};
+  for (const ch of KNOWLEDGE_GRAPH.chapters) {
+    for (const sec of ch.sections) {
+      for (const g of sec.groups) {
+        for (const p of g.points) {
+          total++;
+          if ((POINT_ASK_COUNT[p.name] || 0) > 0) asked++;
+        }
+      }
+    }
+  }
+  // 模拟当前学生提问
+  const myRecent = ['拉伸凸台切除', '核心约束类型', '草图基准面选择', '异形标准孔参数', '剖视图创建'];
+  myQuestions = myRecent.length;
+  for (const n of myRecent) myAskedSet[n] = true;
+  const myAsked = Object.keys(myAskedSet).length;
+  const myRate = total ? Math.round(myAsked * 100 / total) : 0;
+  document.getElementById('kgStatTotal').textContent = total;
+  document.getElementById('kgStatAsked').textContent = myAsked;
+  document.getElementById('kgStatRate').textContent = myRate + '%';
+  document.getElementById('kgStatQuestions').textContent = myQuestions;
+
+  document.getElementById('kgChapters').innerHTML = buildKGHTML();
+  bindChapterToggle();
+}
+
+function bindChapterToggle() {
+  const heads = document.querySelectorAll('#kgChapters .kg-chapter-head');
+  heads.forEach(h => h.addEventListener('click', () => h.parentElement.classList.toggle('open')));
+}
+
+// 搜索 + 筛选
+document.getElementById('kgSearchInput').addEventListener('input', (e) => {
+  kgState.search = e.target.value.trim();
+  document.getElementById('kgChapters').innerHTML = buildKGHTML();
+  bindChapterToggle();
+});
+document.querySelectorAll('#kgLevelFilter .kg-level-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#kgLevelFilter .kg-level-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    kgState.level = btn.dataset.level;
+    document.getElementById('kgChapters').innerHTML = buildKGHTML();
+    bindChapterToggle();
+  });
+});
+
+function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function escapeAttr(s) { return s.replace(/'/g, "\\'"); }
+
+function showModal(title, body) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = body;
+  document.getElementById('modal').classList.add('active');
+}
+function closeModal() { document.getElementById('modal').classList.remove('active'); }
+
+function showTooltip(target, text) {
+  const tt = document.getElementById('tooltip');
+  tt.innerHTML = text;
+  tt.style.display = 'block';
+  const r = target.getBoundingClientRect();
+  tt.style.left = (r.left + r.width/2 - 140) + 'px';
+  tt.style.top = (r.top - 40) + 'px';
+  setTimeout(() => tt.style.display = 'none', 2500);
+}
+
+/* ==================== 功能 4：AI 回答知识点溯源 ==================== */
+const SAMPLE_CHAT = [
+  {
+    role: 'user',
+    text: '我想做一个带通孔的法兰盘，先画一个圆然后拉伸，再用异形孔向导打孔，这流程对吗？'
+  },
+  {
+    role: 'assistant',
+    text: `你的思路基本正确！这是典型的"拉伸 + 异形孔"组合建模。下面我帮你拆解一下完整流程：<br><br>
+<strong>1. 草图阶段</strong><br>
+- 新建零件 → 选择"前视基准面"进入草图<br>
+- 绘制一个圆（直径 80mm），用"智能尺寸"标注<br>
+- 退出草图<br><br>
+<strong>2. 拉伸凸台</strong><br>
+- 点击"拉伸凸台/基体"特征<br>
+- 深度设为 20mm，方向选"两侧对称"或"给定深度"<br>
+- 确认 → 实体生成<br><br>
+<strong>3. 异形孔向导</strong><br>
+- 点击"异形孔向导"（在"特征"工具栏）<br>
+- 孔类型选"沉头孔"或"柱形沉头孔"<br>
+- 定位到法兰盘端面中心，标准选 GB<br><br>
+<strong>常见错误：</strong>拉伸后的零件如果直接打孔，孔位置不准确是因为"草图基准面"没选对。要先点击法兰盘的端面，再进入草图打孔中心点。`,
+    sources: ['拉伸凸台切除', '拉伸深度类型参数', '异形标准孔参数', '草图基准面选择']
+  },
+  {
+    role: 'user',
+    text: '那如果做弹簧这种异形结构呢？扫描和放样我都听过，不知道什么时候用哪个？'
+  },
+  {
+    role: 'assistant',
+    text: `<strong>扫描 vs 放样的核心区别：</strong><br><br>
+<strong>🔹 扫描（Sweep）</strong>：用一条轮廓沿着一条路径扫掠出来<br>
+- 适用：弹簧、管道、异形加强筋、塑料瓶口<br>
+- 三要素：<strong>轮廓</strong>（截面，如圆）+ <strong>路径</strong>（引导线，如螺旋线）+ <strong>起点</strong><br>
+- 特征：截面始终垂直于路径<br><br>
+<strong>🔹 放样（Loft）</strong>：用多个截面"渐变过渡"出来<br>
+- 适用：水壶、化妆品瓶、飞机机翼、渐变管道<br>
+- 三要素：<strong>多个截面草图</strong>（至少 2 个）+ <strong>引导线</strong>（可选）+ <strong>起始/结束约束<br>
+- 特征：截面之间会自动过渡<br><br>
+<strong>💡 简单记忆：</strong><br>
+- 截面<strong>相同</strong>、走弯曲路径 → 用<strong>扫描</strong>（弹簧、管道）<br>
+- 截面<strong>不同</strong>、要平滑过渡 → 用<strong>放样</strong>（水壶、瓶身）<br><br>
+做弹簧的具体步骤：先画一个圆（截面），再画一条螺旋线（路径，用"曲线"里的"螺旋线"工具），然后用"扫描"特征依次选圆和螺旋线。`,
+    sources: ['扫描特征要素', '放样特征要素', '扫描特征操作', '放样特征操作', '线性圆周阵列']
+  }
+];
+
+function renderChat() {
+  const html = SAMPLE_CHAT.map((msg, i) => {
+    const isUser = msg.role === 'user';
+    const avatar = isUser ? '👤' : '🤖';
+    const sourceHtml = !isUser && msg.sources ? `
+      <div class="source-tags">
+        <div class="label">🔗 本次回答涉及的知识点（点击跳转图谱）：</div>
+        ${msg.sources.map(s => `<span class="source-tag" onclick="jumpToPoint('${escapeAttr(s)}')">${s}</span>`).join('')}
+      </div>
+    ` : '';
+    return `<div class="chat-msg ${msg.role}">
+      <div class="chat-avatar">${avatar}</div>
+      <div class="chat-bubble">
+        ${msg.text}
+        ${sourceHtml}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('chatWindow').innerHTML = html;
+}
+
+function jumpToPoint(name) {
+  // 切换到图谱 tab
+  document.querySelectorAll('.topbar-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('[data-tab="mindmap"]').classList.add('active');
+  document.querySelectorAll('.feature-section').forEach(s => s.classList.add('hidden'));
+  document.getElementById('section-mindmap').classList.remove('hidden');
+  if (!mindmapData) { setTimeout(renderMindmap, 50); }
+  // 找到该节点高亮
+  setTimeout(() => {
+    const nodes = document.querySelectorAll(`.mindmap-node-point`);
+    let target = null;
+    nodes.forEach(n => { if (n.dataset.name === name) target = n; });
+    document.querySelectorAll('.mindmap-node-point').forEach(n => n.classList.remove('highlighted'));
+    if (target) {
+      target.classList.add('highlighted');
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      showTooltip(target, `📍 ${name}<br>已跳转到知识图谱`);
+    } else {
+      showTooltip(event.target, `📘 ${name}<br>（实际项目中会高亮到具体节点）`);
+    }
+  }, 200);
+}
+
+/* ==================== 功能 5：问题预警 ==================== */
+function renderAlerts() {
+  // 按 askCount 排序，取 ≥ 3 次的
+  const hot = Object.entries(POINT_ASK_COUNT)
+    .filter(([_, c]) => c >= 3)
+    .sort((a, b) => b[1] - a[1]);
+
+  const alertList = document.getElementById('alertList');
+  alertList.innerHTML = hot.map(([name, count]) => {
+    const isHigh = count >= 8;
+    const level = isHigh ? 'critical' : 'warning';
+    const icon = isHigh ? '🔴' : '⚠️';
+    const sugg = isHigh ? '建议下周课堂重点讲解（≥8 人次）' : '建议关注（≥3 人次）';
+    return `<div class="alert-item ${isHigh ? '' : 'warning'}" onclick="jumpToPoint('${escapeAttr(name)}')">
+      <div class="alert-icon">${icon}</div>
+      <div class="alert-content">
+        <div class="title">「${name}」被 ${count} 名学生询问</div>
+        <div class="desc">${sugg} · 点击查看详情或跳转到知识图谱</div>
+      </div>
+      <div class="alert-count">${count}</div>
+    </div>`;
+  }).join('');
+
+  // 顶栏 badge
+  document.getElementById('alertBadge').textContent = hot.length;
+}
+
+/* ==================== 初始化 ==================== */
+renderClassReport();
+renderChat();
+renderAlerts();
+
+</script>
+</body>
+</html>
